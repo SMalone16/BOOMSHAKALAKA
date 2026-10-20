@@ -86,3 +86,36 @@ test('solo player can choose two teammates and enter a CPU match', {timeout:1500
     assert.notEqual(snap.game.teams[1],null);
   }finally{host?.close();child.kill('SIGTERM')}
 });
+
+test('four browsers automatically enter private draft then play as two teams', {timeout:18000},async()=>{
+  const {port,child}=await serverForTest();const clients=[];
+  try{
+    const host=await connect(port);clients.push(host);host.send({t:'create'});
+    const first=await host.receive(d=>d.t==='joined');
+    const code=first.code;host.send({t:'initials',value:'AAA'});
+    for(let i=1;i<4;i++){
+      const visitor=await connect(port);clients.push(visitor);
+      visitor.send({t:'join',code});
+      await visitor.receive(d=>d.t==='joined');
+      visitor.send({t:'initials',value:['AAA','BBB','CCC','DDD'][i]});
+    }
+    const summaries=await Promise.all(clients.map(c=>c.receive(d=>d.t==='room'&&d.phase==='draft')));
+    assert.equal(new Set(summaries.map(s=>s.me)).size,4);
+    assert.equal(summaries.filter(s=>s.mySide===0).length,2);
+    assert.equal(summaries.filter(s=>s.mySide===1).length,2);
+    for(const side of [0,1]){
+      const captainIndex=summaries.findIndex(s=>s.mySide===side&&s.ownPicks[0].id===s.me);
+      assert.ok(captainIndex>=0);
+      clients[captainIndex].send({t:'team',id:teams[side].id});
+    }
+    await Promise.all(clients.map((c,i)=>c.receive(d=>d.t==='room'&&d.phase==='draft'&&d.myTeam===teams[summaries[i].mySide].id)));
+    for(let i=0;i<4;i++){
+      const s=summaries[i],side=s.mySide,idx=s.ownPicks.findIndex(p=>p.id===s.me);
+      clients[i].send({t:'pick',pick:teams[side].players[idx].id});
+    }
+    for(const c of clients)c.send({t:'ready',value:true});
+    const start=await host.receive(d=>d.t==='game'&&d.game?.controllers.length===4);
+    assert.equal(start.game.players.length,4);
+    assert.deepEqual(start.game.controllers.map(p=>p.initials).sort(),['AAA','BBB','CCC','DDD']);
+  }finally{clients.forEach(c=>c.close());child.kill('SIGTERM')}
+});
