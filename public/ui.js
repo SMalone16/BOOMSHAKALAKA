@@ -40,6 +40,7 @@ function connect(){
       if(data.phase==='game'){show('play');$('gameMatchLabel').textContent=data.code+' · LIVE ARENA';$('pauseBtn').style.display=data.isHost?'':'none'}
     }
     if(data.t==='game'){
+      if(room)room.control=data.control;
       game=data.game;
       if(game?.event?.id&&game.event.id!==lastEvent){
         lastEvent=game.event.id;eventCall={...game.event,until:performance.now()+1400};
