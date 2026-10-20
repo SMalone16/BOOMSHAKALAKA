@@ -53,7 +53,7 @@ test('two browser connections can create/join a private lobby, draft, and play',
     const draftHost=await host.receive(d=>d.t==='room'&&d.phase==='draft');
     const draftGuest=await guest.receive(d=>d.t==='room'&&d.phase==='draft');
     assert.notEqual(draftHost.mySide,draftGuest.mySide);
-    assert.ok(!('opponentTeam' in draftHost),'opponent's chosen team must remain hidden');
+    assert.ok(!('opponentTeam' in draftHost),"Opponent team choice must remain hidden");
     host.send({t:'team',id:teams[0].id});
     guest.send({t:'team',id:teams[1].id});
     await host.receive(d=>d.t==='room'&&d.phase==='draft'&&d.myTeam===teams[0].id);
