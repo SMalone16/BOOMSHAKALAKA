@@ -1,0 +1,20 @@
+name: Test BOOMSHAKALAKA
+on:
+  push:
+    branches: [feature/multiplayer-arcade, main]
+  pull_request:
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts
+      - run: npm test
+      - run: node --check server/index.js
+      - run: node --check server/game.js
+      - run: node --check server/roster.js
+      - run: node --check public/ui.js
+      - run: node --check public/arena.js
