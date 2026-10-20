@@ -11,9 +11,9 @@ function createGame(room) {
   const players=[];
   for(let side=0;side<2;side++){
     const members=room.members.filter(m=>m.side===side);
-    const selected=members.map(m=>m.pick);
+    const selected=members.length?members.map(m=>m.pick):findTeam(room.sides[side].teamId).players.slice(0,2).map(p=>p.id);
     if(members.length===1)selected.push(members[0].support);
-    if(members.length===0)throw Error('Cannot create match with an unrepresented team');
+    // Empty side is allowed in solo mode; its two athletes are CPU-controlled.
     for(let slot=0;slot<2;slot++){
       const profile=findPlayer(room.sides[side].teamId,selected[slot]);
       if(!profile)throw Error('Unresolved draft pick');
@@ -27,7 +27,7 @@ function createGame(room) {
     }
     if(members.length===1)members[0].control=players[side*2].id;
   }
-  const game={phase:'PLAY',pause:false,clock:60,shotClock:24,quarter:1,overtime:false,
+  const game={teams:room.sides.map(s=>s.teamId),phase:'PLAY',pause:false,clock:60,shotClock:24,quarter:1,overtime:false,
     scores:[0,0],players,ball:{mode:'held',owner:0,x:players[0].x,y:players[0].y,z:14},
     possession:0,events:[],eventId:0,pending:0,nextTeam:0,breakClock:0,fire:{id:-1,until:0},streak:{id:-1,count:0},elapsed:0};
   players[0].hasBall=true;
@@ -249,7 +249,7 @@ function tick(room,dt=1/30){
   if(g.clock<=0&&!['shot','dunk'].includes(g.ball.mode)&&!g.pending)endPeriod(g);
 }
 function publicGame(g){
-  return {phase:g.phase,pause:g.pause,quarter:g.quarter,clock:Math.ceil(g.clock),shotClock:Math.ceil(g.shotClock),overtime:g.overtime,
+  return {teams:g.teams,phase:g.phase,pause:g.pause,quarter:g.quarter,clock:Math.ceil(g.clock),shotClock:Math.ceil(g.shotClock),overtime:g.overtime,
     scores:g.scores,ball:g.ball,players:g.players.map(p=>({id:p.id,side:p.side,profileId:p.id===0?'':p.id,
       name:p.name,gender:p.gender,hair:p.hair,skin:p.skin,hairStyle:p.hairStyle,stats:p.stats,
       x:p.x,y:p.y,z:p.z,face:p.face,anim:p.anim,stamina:p.stamina,charge:p.charge,hasBall:p.hasBall,
