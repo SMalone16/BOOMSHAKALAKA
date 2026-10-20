@@ -123,7 +123,7 @@ function handle(ws,data){
     const initials=String(data.value||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);
     if(initials.length!==3){error(ws,'Enter exactly three letters.');return}
     if(room.members.some(p=>p!==m&&p.initials===initials)){error(ws,'Those initials are taken.');return}
-    m.initials=initials;broadcast(room);maybeFull(room);return;
+    m.initials=initials;broadcast(room);if(room.solo)beginDraft(room);else maybeFull(room);return;
   }
   if(data.t==='mode'&&room.phase==='lobby'&&room.host===m.id){
     if(['random','assigned'].includes(data.mode)){room.mode=data.mode;broadcast(room)}return;
@@ -155,6 +155,12 @@ function handle(ws,data){
     m.keys=Object.fromEntries(fields.map(k=>[k,data.keys?.[k]===true]));
     return;
   }
+  if(data.t==='rematch'&&room.phase==='game'&&room.host===m.id&&room.game?.phase==='OVER'){
+    room.phase='draft';room.game=null;room.sides[0].teamId=null;
+    if(!room.solo)room.sides[1].teamId=null;
+    room.members.forEach(player=>{player.pick=null;player.support=null;player.ready=false;player.control=-1;player.keys={}});
+    broadcast(room);return;
+  }
   if(data.t==='pause'&&room.phase==='game'&&room.host===m.id){
     room.game.pause=!room.game.pause;broadcast(room);
   }
@@ -182,9 +188,11 @@ wss.on('connection',ws=>{
 });
 let frame=0;
 setInterval(()=>{
+  frame++;
   for(const room of rooms.values()){
     if(room.phase==='game'){tick(room,1/30);
-      if(++frame%2===0){const game=publicGame(room.game);
+      if(frame%2===0){const game=publicGame(room.game);
+        game.controllers=room.members.filter(member=>member.connected).map(member=>({slot:member.control,initials:member.initials}));
         for(const m of room.members)if(m.connected)send(m.ws,{t:'game',game,control:m.control,host:room.host===m.id})}}
     if(Date.now()-room.lastActive>3*60*60*1000){rooms.delete(room.code);for(const m of room.members)m.ws?.close(1001,'Expired')}
   }
