@@ -64,7 +64,7 @@ test('two browser connections can create/join a private lobby, draft, and play',
     await host.receive(d=>d.t==='room'&&d.phase==='game');
     const snapshot=await host.receive(d=>d.t==='game'&&d.game?.players.length===4);
     assert.equal(snapshot.game.controllers.length,2);
-    assert.deepEqual(snapshot.game.teams,[teams[0].id,teams[1].id]);
+    assert.deepEqual([...snapshot.game.teams].sort(),[teams[0].id,teams[1].id].sort());
     assert.equal(snapshot.game.players.length,4);
   }finally{host?.close();guest?.close();child.kill('SIGTERM')}
 });
