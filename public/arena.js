@@ -1,6 +1,17 @@
 'use strict';
 const canvas=$('gameCanvas'),ctx=canvas.getContext('2d');
-let cameraX=160,frameTime=0,lastSend=0,audio=null,particles=[],smoothed=new Map();
+let cameraX=160,frameTime=0,lastSend=0,audio=null,particles=[],smoothed=new Map(),animTimers=new Map();
+// Client-side animation clocks continue between server snapshots (15Hz).
+// Action changes restart at frame zero; ordinary run/dribble cycles persist.
+function animationTime(id,animation,dt,playing=true){
+  const current=animTimers.get(id);
+  if(!current||current.animation!==animation){
+    animTimers.set(id,{animation,elapsed:0});return 0;
+  }
+  if(playing)current.elapsed+=Math.max(0,Math.min(.06,dt));
+  return current.elapsed;
+}
+
 function rect(c,x,y,w,h,color){c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))}
 function line(c,x,y,x2,y2,color,width=1){c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.moveTo(Math.round(x)+.5,Math.round(y)+.5);c.lineTo(Math.round(x2)+.5,Math.round(y2)+.5);c.stroke()}
 function txt(c,value,x,y,size,color='#fff',align='left'){
@@ -134,8 +145,10 @@ function renderGame(now,dt){
     const x=sm.x-cameraX,y=sm.y-p.z;
     if(x< -50||x>690)continue;
     c.fillStyle='#2a283588';c.beginPath();c.ellipse(x,p.y+3,16,5,0,0,7);c.fill();
-    if(!SpriteArt.draw(c,p,x,y,1.08,time,p.dunkTime?'dunk':p.anim,{face:p.face})){
-      drawAvatar(c,p,team,x,y,1.32,time,p.dunkTime?'dunk':p.anim,g.fireId===p.id);
+    const animation=p.dunkTime>0?'dunk':p.anim;
+    const elapsed=animationTime(p.id,animation,dt,g.phase==='PLAY'&&!g.pause);
+    if(!SpriteArt.draw(c,p,x,y,1.08,time,animation,{face:p.face,direction:p.facing8,animTime:elapsed})){
+      drawAvatar(c,p,team,x,y,1.32,time,animation,g.fireId===p.id);
     }
     const human=g.controllers?.find(m=>m.slot===p.id);
     if(human){rect(c,x-18,y-71,36,13,'#172b49');txt(c,human.initials,x,y-65,10,'#ffeda7','center')}
@@ -143,7 +156,14 @@ function renderGame(now,dt){
       c.beginPath();c.strokeStyle='#faff89';c.lineWidth=2;c.ellipse(x,p.y+5,20,7,0,0,7);c.stroke();
       rect(c,x-17,p.y+12,34,5,'#152438');rect(c,x-16,p.y+13,32*p.stamina/100,3,'#91ff98');
     }
-    if(p.hasBall&&g.ball.mode==='held')drawBall(c,x+15,y-17-Math.abs(Math.sin(time*10))*9,6);
+    if(p.hasBall&&g.ball.mode==='held'){
+      // The basketball is still a separate physics object, but its visual
+      // hand position now follows the 8-way athlete artwork.
+      const facing=Number.isInteger(p.facing8)?p.facing8:(p.face<0?6:2);
+      const handX=[-11,10,16,15,12,-15,-16,-10][facing];
+      const handY=[-15,-15,-14,-13,-13,-13,-14,-15][facing];
+      drawBall(c,x+handX,y+handY-Math.abs(Math.sin(time*10))*9,6);
+    }
     if(p.charge>0){rect(c,x-19,y-77,38,5,'#102143');rect(c,x-18,y-76,36*p.charge/1.12,3,p.charge>.82?'#ffb35a':'#c7ff82')}
   }
   const b=g.ball;

@@ -75,3 +75,20 @@ The source PNG having an RGBA channel **does not prove its background is transpa
 
 ### Adding the remaining five teams
 Add four equally organized PNGs to each team's folder. Then append the corresponding character roster IDs and exact filenames to the \`characters\` map in \`public/sprites.js\`. This does not require changes to multiplayer or the basketball physics.
+
+## Ash and Leaf: eight-direction animation test
+
+Ash and Leaf have **new 10×8 sprite atlases** alongside their original 3×3 sheets.
+The uploaded names are **`public/assets/sprites/pallet/ash.png.png`** and **`public/assets/sprites/pallet/leaf.png.png`** (two .png suffixes); the engine uses them as-is.
+
+- 8 sprite rows, in clockwise order: **N, NE, E, SE, S, SW, W, NW**. The server broadcasts `facing8` with each player (including CPU opponents) based on movement inputs, and fixes pass facing toward the teammate until the pass action ends.
+- 10 pose columns in order: **Idle A, Idle B, Run A, Run B, Run C, Run D, Dribble A, Dribble B, Pass Windup, Pass Release**.
+- The client advances run poses every 115 ms, dribble every 160 ms, idle every 550 ms; passing plays windup then release and holds the second pose while the pass action continues. Client-side animation clocks interpolate between 15 Hz multiplayer snapshots.
+- **Only Ash and Leaf** use these directional sheets. For **shoot, jump/block, dunk, and celebrate**, both retain their old 3×3 art until the new action frames are drawn. Gary, Professor, Pewter and the remaining teams work as before.
+- Sprites are sliced from the original uploaded PNGs directly using exact fractional cell boundaries. The display preserves cell aspect ratio and uses nearest-neighbor rendering; no need to manually resize your art or rename the uploaded files.
+- The ball, physics, possession, network synchronization and other gameplay rules are unchanged.
+
+### Directional sprite diagnostics
+Open **`/directional-lab.html`** on the Codespaces forwarded game URL. Choose Ash or Leaf; select one of the eight facings; then preview Idle, Run, Dribble or Pass in motion. You can also view the raw uploaded sheet and the ten extracted source frames for that direction. Use **`/sprite-lab.html`** to inspect the old nine-pose fallback sheets.
+
+This is a first-pass atlas integration, **not an asset-pipeline retouch**. It assumes the new sheets really use a 10×8 equal-cell grid. If art in any frame is off-center or crosses cell boundaries, please flag which athlete, direction and animation in the preview and we can add calibrated per-image trimming/anchor points without changing the server.
