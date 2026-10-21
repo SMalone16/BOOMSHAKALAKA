@@ -1,7 +1,7 @@
 name: Test BOOMSHAKALAKA
 on:
   push:
-    branches: [feature/multiplayer-arcade, feature/pallet-pewter-sprite-runtime, feature/ash-leaf-eight-direction, main]
+    branches: [feature/multiplayer-arcade, feature/pallet-pewter-sprite-runtime, feature/ash-leaf-eight-direction, fix/seven-row-sprite-atlas, main]
   pull_request:
 jobs:
   unit-tests:
@@ -11,8 +11,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --ignore-scripts
+      - run: npm install
       - run: npm test
+      - run: npm run sprites:check
+      - run: node --check scripts/sprite-tools.cjs
       - run: node --check server/index.js
       - run: node --check server/game.js
       - run: node --check server/roster.js
