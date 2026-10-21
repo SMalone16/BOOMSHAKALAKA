@@ -15,7 +15,8 @@ function inspect(){
  source.src=SpriteArt.advancedPath(id);
  SpriteArt.load(id,'advanced');
  const entry=SpriteArt.inspect(id,'advanced');
- $('status').textContent=JSON.stringify(entry,null,2);
+ const mapped=SpriteArt.advancedDirections[Number(direction.value)];
+ $('status').textContent=JSON.stringify({...entry,grid:'7 rows × 10 columns = 70 frames',direction:SpriteArt.directions[Number(direction.value)],sourceRow:mapped.row,mirrored:mapped.flipX},null,2);
  const sprite=SpriteArt.load(id,'advanced'),img=sprite?.image;
  if(!img||sprite.state!=='ready')return;
  for(let i=0;i<10;i++){
@@ -24,7 +25,10 @@ function inspect(){
    ctx.imageSmoothingEnabled=false;
    const ratio=Math.min(48/rect.sw,64/rect.sh);
    const dw=rect.sw*ratio,dh=rect.sh*ratio;
+   ctx.save();
+   if(rect.flipX){ctx.translate(48,0);ctx.scale(-1,1)}
    ctx.drawImage(img,rect.sx,rect.sy,rect.sw,rect.sh,(48-dw)/2,64-dh,dw,dh);
+   ctx.restore();
  }
 }
 function animate(now){
