@@ -18,3 +18,5 @@ jobs:
       - run: node --check server/roster.js
       - run: node --check public/ui.js
       - run: node --check public/arena.js
+      - run: node --check public/sprites.js
+      - run: node --check public/sprite-lab.js
