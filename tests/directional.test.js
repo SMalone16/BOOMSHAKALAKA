@@ -39,7 +39,7 @@ test('eight-way movement maps onto seven painted rows and mirrors missing West',
   const e=art.advancedRect(1402,1122,2,0),w=art.advancedRect(1402,1122,6,0);
   assert.equal(e.sy,w.sy);
   assert.equal(w.flipX,true);
-  assert.equal(art.advancedRect(1402,1122,7,9).sy,1122/7*6);
+  assert.equal(art.advancedRect(1402,1122,7,9).sy,Math.round(1122/7*6));
 });
 test('movement cycles through four running frames and two dribble frames',()=>{
   assert.deepEqual([0,.115,.23,.345,.46].map(x=>art.advancedFrameFor('run',x)),[2,3,4,5,2]);
