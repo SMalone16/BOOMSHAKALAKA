@@ -99,7 +99,8 @@ const SpriteArt=(()=>{
   function advancedFrameFor(animation,seconds=0){
     const list=sequences[animation]||sequences.idle;
     const frameTime=duration[animation]||duration.idle;
-    const index=Math.max(0,Math.floor(Math.max(0,seconds)/frameTime));
+    // Epsilon keeps exact frame boundaries stable across floating-point rounding.
+    const index=Math.max(0,Math.floor(Math.max(0,seconds)/frameTime+1e-7));
     return animation==='pass'?list[Math.min(index,list.length-1)]:list[index%list.length];
   }
   function sourceRect(imageWidth,imageHeight,index,layout={}){
