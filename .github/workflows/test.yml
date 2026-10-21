@@ -14,6 +14,8 @@ jobs:
       - run: npm install
       - run: npm test
       - run: npm run sprites:check
+      - run: npm run sprites:slice -- pallet-0
+      - run: node -e "const fs=require('fs'); const p='build/sprite-frames/pallet-0/atlas.json'; const m=JSON.parse(fs.readFileSync(p)); if(m.frames.length!==70)process.exit(1)"
       - run: node --check scripts/sprite-tools.cjs
       - run: node --check server/index.js
       - run: node --check server/game.js
