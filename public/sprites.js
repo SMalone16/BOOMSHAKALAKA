@@ -131,10 +131,13 @@ const SpriteArt=(()=>{
     const dir=((Math.trunc(Number.isFinite(direction)?direction:4)%8)+8)%8;
     const {row,flipX}=advancedDirections[dir];
     const col=Math.max(0,Math.min(ADV_COLS-1,Math.trunc(Number.isFinite(column)?column:0)));
-    // 1402x1122 is not divisible evenly by the frame grid.
-    // Fractional rectangles avoid creeping row offsets and are supported by Canvas.
-    const cw=imageWidth/ADV_COLS,ch=imageHeight/ADV_ROWS;
-    return {sx:col*cw,sy:row*ch,sw:cw,sh:ch,flipX,row};
+    // Independent integer boundaries agree precisely with Sharp extraction.
+    // The 1402 x 1122 images are not evenly divisible by 10 x 7.
+    const sx=Math.round(col*imageWidth/ADV_COLS);
+    const sy=Math.round(row*imageHeight/ADV_ROWS);
+    const ex=Math.round((col+1)*imageWidth/ADV_COLS);
+    const ey=Math.round((row+1)*imageHeight/ADV_ROWS);
+    return {sx,sy,sw:ex-sx,sh:ey-sy,flipX,row};
   }
   /**
    * Try advanced for actions with dedicated 8-way art, otherwise use old
