@@ -42,6 +42,7 @@ function connect(){
     if(data.t==='game'){
       if(room)room.control=data.control;
       game=data.game;
+      if(game?.teams)SpriteArt.preloadMatch(game.teams);
       if(game?.event?.id&&game.event.id!==lastEvent){
         lastEvent=game.event.id;eventCall={...game.event,until:performance.now()+1400};
         if(typeof arcadeSound==='function')arcadeSound(game.event.kind);
@@ -131,6 +132,7 @@ function renderDraft(){
   if(!room)return;
   if(room.myTeam&&!captain()){const i=room.roster.findIndex(t=>t.id===room.myTeam);if(i>=0)browse=i}
   const team=room.roster[browse],mine=room.ownPicks.find(p=>p.id===me),locked=room.myTeam===team.id;
+  SpriteArt.preloadTeam(team.id);
   const isSoloSide=room.ownPicks.length===1;
   $('teamName').textContent=team.name;$('teamName').style.color=team.primary;
   $('teamIcon').textContent=icons[team.id]||'★';$('teamIcon').style.color=team.primary;
@@ -155,7 +157,8 @@ function renderDraft(){
   }).join('');
   for(const portrait of $('rosterCards').querySelectorAll('canvas')){
     const p=team.players.find(p=>p.id===portrait.dataset.portrait),c=portrait.getContext('2d');
-    c.imageSmoothingEnabled=false;drawAvatar(c,p,team,32,73,1.9,0,'idle',false);
+    c.imageSmoothingEnabled=false;
+    if(!SpriteArt.draw(c,p,32,77,1,0,'idle',{face:1}))drawAvatar(c,p,team,32,73,1.9,0,'idle',false);
   }
   $('readyBtn').disabled=!allowed&&!mine?.ready||!selected||(isSoloSide&&!support);
   $('readyBtn').textContent=mine?.ready?'✓ READY — TAP TO CHANGE':'LOCK LINEUP / READY';
@@ -206,6 +209,9 @@ for(const button of $('touchControls').querySelectorAll('[data-key]')){
   button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture(e.pointerId);keyChange(k,true)});
   for(const ev of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(ev,e=>{e.preventDefault();keyChange(k,false)});
 }
+SpriteArt.onChange(id=>{
+  if(room?.phase==='draft'&&room.roster[browse]?.players.some(p=>p.id===id))renderDraft();
+});
 code=new URLSearchParams(location.search).get('room')?.toUpperCase()||null;
 if(code)$('joinCode').value=code;
 connect();
