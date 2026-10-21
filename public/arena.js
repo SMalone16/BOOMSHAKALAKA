@@ -156,7 +156,14 @@ function renderGame(now,dt){
       c.beginPath();c.strokeStyle='#faff89';c.lineWidth=2;c.ellipse(x,p.y+5,20,7,0,0,7);c.stroke();
       rect(c,x-17,p.y+12,34,5,'#152438');rect(c,x-16,p.y+13,32*p.stamina/100,3,'#91ff98');
     }
-    if(p.hasBall&&g.ball.mode==='held')drawBall(c,x+15,y-17-Math.abs(Math.sin(time*10))*9,6);
+    if(p.hasBall&&g.ball.mode==='held'){
+      // The basketball is still a separate physics object, but its visual
+      // hand position now follows the 8-way athlete artwork.
+      const facing=Number.isInteger(p.facing8)?p.facing8:(p.face<0?6:2);
+      const handX=[-11,10,16,15,12,-15,-16,-10][facing];
+      const handY=[-15,-15,-14,-13,-13,-13,-14,-15][facing];
+      drawBall(c,x+handX,y+handY-Math.abs(Math.sin(time*10))*9,6);
+    }
     if(p.charge>0){rect(c,x-19,y-77,38,5,'#102143');rect(c,x-18,y-76,36*p.charge/1.12,3,p.charge>.82?'#ffb35a':'#c7ff82')}
   }
   const b=g.ball;
