@@ -6,6 +6,11 @@ const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const rand=(a,b)=>a+Math.random()*(b-a);
 const goal=side=>HOOPS[side===0?1:0];
 const dir=side=>side===0?1:-1;
+// 0 N, 1 NE, 2 E, 3 SE, 4 S, 5 SW, 6 W, 7 NW.
+function directionFromVector(dx,dy,fallback=4){
+  if(!Number.isFinite(dx)||!Number.isFinite(dy)||dx*dx+dy*dy<.001)return fallback;
+  return ((Math.round(Math.atan2(dx,-dy)/(Math.PI/4))%8)+8)%8;
+}
 function createGame(room) {
   let id=0;
   const players=[];
@@ -20,7 +25,7 @@ function createGame(room) {
       const owned=slot<members.length?members[slot].token:null;
       const p={...profile,id:id++,spriteId:profile.id,side,ownerToken:owned,
         x:side===0?270+slot*47:690-slot*47,y:slot?255:174,
-        vx:0,vy:0,z:0,vz:0,face:dir(side),stamina:100,cooldown:0,blockWindow:0,
+        vx:0,vy:0,z:0,vz:0,face:dir(side),facing8:side===0?2:6,stamina:100,cooldown:0,blockWindow:0,
         charging:0,charge:0,dunkTime:0,anim:'idle',actionT:0,action:'',hasBall:false,input:{},prev:{},aiThink:0};
       players.push(p);
       if(owned)members[slot].control=p.id;
@@ -67,7 +72,10 @@ function passBall(g,p){
   if(!p.hasBall||p.cooldown>0)return;
   const mate=g.players.find(q=>q.side===p.side&&q.id!==p.id);
   if(!mate)return;
-  p.hasBall=false;p.cooldown=.3;p.charging=0;p.action='pass';p.actionT=.3;
+  // Face the *receiver*, not the prior run direction, for pass animations.
+  p.facing8=directionFromVector(mate.x-p.x,mate.y-p.y,p.facing8);
+  p.face=mate.x<p.x?-1:mate.x>p.x?1:p.face;
+  p.hasBall=false;p.cooldown=.36;p.charging=0;p.action='pass';p.actionT=.34;
   g.ball={mode:'pass',owner:-1,from:p.id,to:mate.id,side:p.side,x:p.x+p.face*12,y:p.y,z:22,
     sx:p.x+p.face*12,sy:p.y,sz:22,time:0,duration:clamp(dist(p,mate)/355,.27,.82)};
   emit(g,'NICE PASS!','pass');
@@ -160,7 +168,11 @@ function updatePlayers(room,g,dt){
     const accel=68+p.stats.speed*.65,boost=p.input.sprint&&p.stamina>2?1.55:1;
     const ax=dx/len*accel*boost,ay=dy/len*accel*boost;
     p.vx+=(ax-p.vx)*Math.min(1,dt*10);p.vy+=(ay-p.vy)*Math.min(1,dt*10);
-    if(dx)p.face=dx>0?1:-1;
+    // Lock pass direction while the throwing animation completes.
+    if((dx||dy)&&!(p.action==='pass'&&p.actionT>0)){
+      p.facing8=directionFromVector(dx,dy,p.facing8);
+      if(dx)p.face=dx>0?1:-1;
+    }
     if(p.dunkTime<=0){p.x=clamp(p.x+p.vx*dt,14,WIDTH-14);p.y=clamp(p.y+p.vy*dt,TOP+8,BOTTOM-8)}
     if(p.z>0||p.vz>0){p.z+=p.vz*dt;p.vz-=420*dt;if(p.z<=0)p.z=p.vz=0}
     const v=p.input,old=p.prev;
@@ -256,8 +268,8 @@ function publicGame(g){
   return {teams:g.teams,phase:g.phase,pause:g.pause,quarter:g.quarter,clock:Math.ceil(g.clock),shotClock:Math.ceil(g.shotClock),overtime:g.overtime,
     scores:g.scores,ball:g.ball,players:g.players.map(p=>({id:p.id,side:p.side,profileId:p.spriteId,
       name:p.name,gender:p.gender,hair:p.hair,skin:p.skin,hairStyle:p.hairStyle,stats:p.stats,
-      x:p.x,y:p.y,z:p.z,face:p.face,anim:p.anim,stamina:p.stamina,charge:p.charge,hasBall:p.hasBall,
+      x:p.x,y:p.y,z:p.z,face:p.face,facing8:p.facing8,anim:p.anim,stamina:p.stamina,charge:p.charge,hasBall:p.hasBall,
       blockWindow:p.blockWindow,dunkTime:p.dunkTime,ownerToken:undefined})),
     event:g.events[0]||null,fireId:g.fire.until>g.elapsed?g.fire.id:-1};
 }
-module.exports={createGame,tick,publicGame,resetPossession,give,passBall,takeShot,score,WIDTH,TOP,BOTTOM};
+module.exports={createGame,tick,publicGame,resetPossession,give,passBall,takeShot,score,directionFromVector,WIDTH,TOP,BOTTOM};
