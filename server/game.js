@@ -18,10 +18,10 @@ function createGame(room) {
       const profile=findPlayer(room.sides[side].teamId,selected[slot]);
       if(!profile)throw Error('Unresolved draft pick');
       const owned=slot<members.length?members[slot].token:null;
-      const p={...profile,id:id++,side,ownerToken:owned,
+      const p={...profile,id:id++,spriteId:profile.id,side,ownerToken:owned,
         x:side===0?270+slot*47:690-slot*47,y:slot?255:174,
         vx:0,vy:0,z:0,vz:0,face:dir(side),stamina:100,cooldown:0,blockWindow:0,
-        charging:0,charge:0,dunkTime:0,anim:'idle',hasBall:false,input:{},prev:{},aiThink:0};
+        charging:0,charge:0,dunkTime:0,anim:'idle',actionT:0,action:'',hasBall:false,input:{},prev:{},aiThink:0};
       players.push(p);
       if(owned)members[slot].control=p.id;
     }
@@ -56,6 +56,8 @@ function score(g,side,points,shooter,dunk=false){
   g.scores[side]+=points;
   const s=g.streak;
   if(s.id===shooter)s.count++;else{s.id=shooter;s.count=1}
+  const scorer=g.players.find(p=>p.id===shooter);
+  if(scorer){scorer.action='celebrate';scorer.actionT=1}
   if(s.count>=3){g.fire={id:shooter,until:g.elapsed+18};emit(g,"HE'S ON FIRE!",'fire')}
   else emit(g,dunk?'BOOMSHAKALAKA!':points===3?'FROM DOWNTOWN!':'NOTHING BUT NET!',dunk?'dunk':'score');
   if(g.overtime){g.phase='OVER';g.ball={mode:'dead',owner:-1,x:goal(side),y:RIM_Y,z:20};return}
@@ -65,7 +67,7 @@ function passBall(g,p){
   if(!p.hasBall||p.cooldown>0)return;
   const mate=g.players.find(q=>q.side===p.side&&q.id!==p.id);
   if(!mate)return;
-  p.hasBall=false;p.cooldown=.3;p.charging=0;
+  p.hasBall=false;p.cooldown=.3;p.charging=0;p.action='pass';p.actionT=.3;
   g.ball={mode:'pass',owner:-1,from:p.id,to:mate.id,side:p.side,x:p.x+p.face*12,y:p.y,z:22,
     sx:p.x+p.face*12,sy:p.y,sz:22,time:0,duration:clamp(dist(p,mate)/355,.27,.82)};
   emit(g,'NICE PASS!','pass');
@@ -80,7 +82,7 @@ function takeShot(g,p,power){
   const perfect=1-Math.min(1,Math.abs(power-ideal)/.85);
   const odds=clamp(.17+stat/100*.58+perfect*.19-pressure-(three?.13:0),.08,.94);
   const made=Math.random()<odds;
-  p.hasBall=false;p.cooldown=.55;p.charging=0;p.anim='shoot';
+  p.hasBall=false;p.cooldown=.55;p.charging=0;p.anim='shoot';p.action='shoot';p.actionT=.55;
   const duration=clamp(.53+range/590,.65,1.7);
   g.ball={mode:'shot',owner:-1,shooter:p.id,side:p.side,points:three?3:2,
     x:p.x,y:p.y,z:28+p.z,sx:p.x,sy:p.y,sz:28+p.z,tx:gx+(made?0:rand(-38,38)),
@@ -89,7 +91,7 @@ function takeShot(g,p,power){
 }
 function startDunk(g,p){
   if(!p.hasBall||p.cooldown>0)return;
-  p.dunkTime=.7;p.charging=0;p.cooldown=1;
+  p.dunkTime=.7;p.charging=0;p.cooldown=1;p.action='dunk';p.actionT=.7;
   g.ball={mode:'dunk',owner:p.id,shooter:p.id,side:p.side,x:p.x,y:p.y,z:25,time:0,duration:.7,blocked:false};
   emit(g,'TAKING FLIGHT!','shot');
 }
@@ -104,7 +106,7 @@ function steal(g,p){
 }
 function jump(g,p){
   if(p.z>0||p.cooldown>0)return;
-  p.z=.1;p.vz=188*(.75+p.stats.block/300);p.blockWindow=.43;p.cooldown=.52;
+  p.z=.1;p.vz=188*(.75+p.stats.block/300);p.blockWindow=.43;p.cooldown=.52;p.action='block';p.actionT=.48;
 }
 function controlKeys(m,g){
   let p=g.players[m.control];
@@ -150,6 +152,7 @@ function updatePlayers(room,g,dt){
     const owner=room.members.find(m=>m.connected&&m.control===p.id);
     if(!owner)aiKeys(g,p,dt);
     p.cooldown=Math.max(0,p.cooldown-dt);
+    p.actionT=Math.max(0,p.actionT-dt);
     p.blockWindow=Math.max(0,p.blockWindow-dt);
     p.stamina=clamp(p.stamina+((p.input.sprint&&p.stamina>0)?-34:18)*dt,0,100);
     const dx=Number(!!p.input.right)-Number(!!p.input.left),dy=Number(!!p.input.down)-Number(!!p.input.up);
@@ -171,7 +174,8 @@ function updatePlayers(room,g,dt){
       p.charge=0;
     }
     p.prev={...v};
-    if(p.hasBall&&g.ball.mode==='held')p.anim=Math.hypot(p.vx,p.vy)>18?'dribble':'idle';
+    if(p.actionT>0)p.anim=p.action;
+    else if(p.hasBall&&g.ball.mode==='held')p.anim=Math.hypot(p.vx,p.vy)>18?'dribble':'idle';
     else p.anim=p.z>0?'jump':Math.hypot(p.vx,p.vy)>18?'run':'idle';
   }
   for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){
@@ -250,7 +254,7 @@ function tick(room,dt=1/30){
 }
 function publicGame(g){
   return {teams:g.teams,phase:g.phase,pause:g.pause,quarter:g.quarter,clock:Math.ceil(g.clock),shotClock:Math.ceil(g.shotClock),overtime:g.overtime,
-    scores:g.scores,ball:g.ball,players:g.players.map(p=>({id:p.id,side:p.side,profileId:p.id===0?'':p.id,
+    scores:g.scores,ball:g.ball,players:g.players.map(p=>({id:p.id,side:p.side,profileId:p.spriteId,
       name:p.name,gender:p.gender,hair:p.hair,skin:p.skin,hairStyle:p.hairStyle,stats:p.stats,
       x:p.x,y:p.y,z:p.z,face:p.face,anim:p.anim,stamina:p.stamina,charge:p.charge,hasBall:p.hasBall,
       blockWindow:p.blockWindow,dunkTime:p.dunkTime,ownerToken:undefined})),

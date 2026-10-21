@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BOOMSHAKALAKA — Sprite Lab</title>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;color:#f3f6ff;background:#101a30}*{box-sizing:border-box}
+body{margin:0;padding:24px;max-width:1220px;margin-inline:auto}h1{font-size:clamp(25px,4vw,43px);margin:5px 0}
+p{color:#b4c6e2;line-height:1.6}.badge{background:#263d5d;border:1px solid #5d7193;padding:7px 12px;border-radius:6px}
+a{color:#b8ff8d}.controls{display:flex;gap:14px;flex-wrap:wrap;background:#192945;padding:18px;border:1px solid #435f8a}
+label{display:flex;gap:9px;align-items:center;font-weight:650}select,input{padding:8px;background:#0c1424;color:#fff;border:1px solid #6e92bb}input[type=number]{width:75px}
+button{border:2px solid #8cb5d4;background:#344d76;color:#fff;padding:9px 15px;font-weight:750;cursor:pointer}
+main{display:grid;grid-template-columns:minmax(280px,1fr) minmax(280px,1.35fr);gap:22px;margin-top:20px}
+section{background:#182642;padding:16px;border:1px solid #455e86}
+h2{font-size:18px;margin:0 0 12px}.source{width:100%;display:block;image-rendering:pixelated;background:repeating-conic-gradient(#58667c 0% 25%,#344057 0% 50%) 50%/24px 24px}
+.frames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.frame{background:#0f1a2e;border:1px solid #415e80;padding:6px;text-align:center}
+.frame canvas{width:100%;max-width:120px;aspect-ratio:3/4;image-rendering:pixelated;background:repeating-conic-gradient(#40526c 0% 25%,#293c56 0% 50%) 50%/16px 16px}
+.frame span{display:block;font:650 11px monospace;color:#daeaac;padding:3px}
+.stats{font:13px/1.6 monospace;background:#111b33;padding:12px;overflow-wrap:anywhere}
+@media(max-width:730px){main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<a href="/">← Back to BOOMSHAKALAKA</a>
+<h1>BOOMSHAKALAKA <span style="color:#cbfc78">Sprite Lab</span></h1>
+<p>Verify frame boundaries and transparent backgrounds for the eight uploaded Pallet and Pewter sprites. This page does not change game mechanics, server physics, or the original images.</p>
+<div class="controls">
+<label>Character <select id="character"></select></label>
+<label>Inset (source pixels) <input id="inset" type="number" min="0" max="150" step="1" value="0"></label>
+<label>Horizontal margin <input id="marginX" type="number" min="0" max="250" step="1" value="0"></label>
+<label>Vertical margin <input id="marginY" type="number" min="0" max="250" step="1" value="0"></label>
+<label>Column gap <input id="gapX" type="number" min="0" max="150" step="1" value="0"></label>
+<label>Row gap <input id="gapY" type="number" min="0" max="150" step="1" value="0"></label>
+<button id="reset">Reset crops</button>
+</div>
+<main>
+<section><h2>Original complete sheet</h2><img id="source" class="source" alt="Complete uploaded sprite sheet">
+<p class="stats" id="dimensions">Loading source image…</p></section>
+<section><h2>Frames as the game will use them</h2><div id="frames" class="frames"></div>
+<p class="stats" id="diagnostics"></p>
+<p>If any pose shows parts of another cell, a border, or text, adjust the inset/margins/gaps above. These are temporary visual checks; send me the values to bake into the shared game configuration.</p>
+</section>
+</main>
+<script src="/sprites.js"></script>
+<script src="/sprite-lab.js"></script>
+</body></html>
