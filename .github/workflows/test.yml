@@ -1,7 +1,7 @@
 name: Test BOOMSHAKALAKA
 on:
   push:
-    branches: [feature/multiplayer-arcade, feature/pallet-pewter-sprite-runtime, main]
+    branches: [feature/multiplayer-arcade, feature/pallet-pewter-sprite-runtime, feature/ash-leaf-eight-direction, main]
   pull_request:
 jobs:
   unit-tests:
@@ -20,3 +20,4 @@ jobs:
       - run: node --check public/arena.js
       - run: node --check public/sprites.js
       - run: node --check public/sprite-lab.js
+      - run: node --check public/directional-lab.js
