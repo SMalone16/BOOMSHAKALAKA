@@ -1,7 +1,7 @@
 name: Test BOOMSHAKALAKA
 on:
   push:
-    branches: [feature/multiplayer-arcade, feature/pallet-pewter-sprite-runtime, feature/ash-leaf-eight-direction, main]
+    branches: [feature/multiplayer-arcade, feature/pallet-pewter-sprite-runtime, feature/ash-leaf-eight-direction, fix/seven-row-sprite-atlas, main]
   pull_request:
 jobs:
   unit-tests:
@@ -11,8 +11,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --ignore-scripts
+      - run: npm install
       - run: npm test
+      - run: npm run sprites:check
+      - run: npm run sprites:slice -- all
+      - run: node -e "const fs=require('fs'); for(const id of ['pallet-0','pallet-3']){const m=JSON.parse(fs.readFileSync('build/sprite-frames/'+id+'/atlas.json'));if(m.frames.length!==70)process.exit(1)}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ash-leaf-sliced-frames
+          path: build/sprite-frames/
+          retention-days: 7
+      - run: node --check scripts/sprite-tools.cjs
       - run: node --check server/index.js
       - run: node --check server/game.js
       - run: node --check server/roster.js
