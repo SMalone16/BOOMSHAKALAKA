@@ -134,7 +134,9 @@ function renderGame(now,dt){
     const x=sm.x-cameraX,y=sm.y-p.z;
     if(x< -50||x>690)continue;
     c.fillStyle='#2a283588';c.beginPath();c.ellipse(x,p.y+3,16,5,0,0,7);c.fill();
-    drawAvatar(c,p,team,x,y,1.32,time,p.dunkTime?'dunk':p.anim,g.fireId===p.id);
+    if(!SpriteArt.draw(c,p,x,y,1.08,time,p.dunkTime?'dunk':p.anim,{face:p.face})){
+      drawAvatar(c,p,team,x,y,1.32,time,p.dunkTime?'dunk':p.anim,g.fireId===p.id);
+    }
     const human=g.controllers?.find(m=>m.slot===p.id);
     if(human){rect(c,x-18,y-71,36,13,'#172b49');txt(c,human.initials,x,y-65,10,'#ffeda7','center')}
     if(p.id===room.control){
