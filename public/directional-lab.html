@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BOOMSHAKALAKA | 8-Way Animation Lab</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:22px;font-family:system-ui,sans-serif;background:#0d142b;color:#edf3fd;max-width:1280px;margin:auto}
+a{color:#aafb8a}h1{font-size:clamp(25px,4vw,46px);margin:8px 0}p{color:#bac7e1;line-height:1.5}
+section{background:#192643;border:1px solid #526c97;padding:17px}.layout{display:grid;grid-template-columns:minmax(265px,1fr) minmax(300px,1.1fr);gap:16px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;background:#1c2c4e;border:1px solid #5775a2;padding:12px;margin:14px 0}
+label{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px}select,button{background:#283b66;color:white;border:1px solid #88a9ce;padding:9px;font-weight:700}
+#portrait{display:block;width:240px;height:320px;margin:16px auto;background:repeating-conic-gradient(#617289 0 25%,#32435e 0 50%) 50%/28px 28px;image-rendering:pixelated;border:2px solid #7491be}
+#raw{display:block;max-width:100%;width:100%;image-rendering:pixelated;background:repeating-conic-gradient(#4e6380 0 25%,#23364f 0 50%) 50%/16px 16px}
+#frames{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:2px;margin-top:10px}
+#frames canvas{display:block;width:100%;aspect-ratio:1;image-rendering:pixelated;background:#23324c}
+#status{font:12px/1.7 monospace;word-break:break-word;color:#bcf29d}
+@media(max-width:760px){.layout{grid-template-columns:1fr}}
+</style></head>
+<body><a href="/">← Back to game</a> <span style="opacity:.55">/</span> <a href="/sprite-lab.html">Original nine-pose sprite lab</a>
+<h1>Eight-direction <span style="color:#baff7d">Animation Lab</span></h1>
+<p>Preview Ash and Leaf's new 10×8 directional atlases. Move the controls to verify running loops, dribbling, and passing in all eight directions. The source PNGs are not modified.</p>
+<div class="controls">
+<label>Athlete <select id="who"><option value="pallet-0">Ash</option><option value="pallet-3">Leaf</option></select></label>
+<label>Facing <select id="direction"></select></label>
+<label>Animation <select id="motion"><option value="idle">Idle (2)</option><option value="run" selected>Run (4)</option><option value="dribble">Dribble (2)</option><option value="pass">Pass (2)</option></select></label>
+<button id="replay">Restart animation</button>
+</div>
+<div class="layout">
+<section><h2>Game-scale live preview</h2><canvas id="portrait" width="240" height="320"></canvas>
+<p id="status">Loading sprites…</p>
+<p>Watch for incorrect direction, pose order, repeated frames, jumps in body alignment, stray background pixels, and accidental cutoffs. Pass plays its two frames then holds the release frame.</p>
+</section>
+<section><h2>Source 80-frame sheet</h2><img id="raw" alt="Full 10-column by 8-row sprite sheet">
+<h3>Ten frames for selected direction</h3><div id="frames"></div>
+<p style="font-size:12px">Frame order: Idle A / Idle B / Run A / Run B / Run C / Run D / Dribble A / Dribble B / Pass Windup / Pass Release.</p>
+</section></div>
+<script src="/sprites.js"></script><script src="/directional-lab.js"></script>
+</body></html>
