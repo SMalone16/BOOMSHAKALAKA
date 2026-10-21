@@ -2,7 +2,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const sharp=require('sharp');
-const {bounds,sourceFor}=require('../scripts/sprite-tools');
+const {bounds,sourceFor}=require('../scripts/sprite-tools.cjs');
 const SpriteArt=require('../public/sprites');
 
 test('Sharp extraction coordinates match in-game Canvas cropping for every 7x10 cell',()=>{
