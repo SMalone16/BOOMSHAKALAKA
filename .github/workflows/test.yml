@@ -1,7 +1,7 @@
 name: Test BOOMSHAKALAKA
 on:
   push:
-    branches: [feature/multiplayer-arcade, main]
+    branches: [feature/multiplayer-arcade, feature/pallet-pewter-sprite-runtime, main]
   pull_request:
 jobs:
   unit-tests:
