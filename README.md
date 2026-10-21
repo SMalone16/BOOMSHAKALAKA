@@ -56,3 +56,22 @@ Then open http://localhost:3000. GET \`/health\` returns server status.
 
 ## Safety and limitations
 Educational prototype, **not a production-scale public game service**: rooms have unguessable temporary codes and per-player session tokens, but no accounts, persistent game storage, matchmaking service, moderation, or anti-cheat telemetry. The server accepts only predefined control buttons, limits message size and rate, and controls authoritative scores/movement. Codespaces is suitable for supervised playtesting; do not keep its public port running unattended. If a player leaves mid-game, their athlete falls back to AI until they reconnect.
+
+## New Pallet + Pewter character art (sprite runtime)
+**Eight custom sprite sheets are now integrated.** The game uses the filenames already uploaded in \`public/assets/sprites/pallet/\` and \`public/assets/sprites/pewter/\`. No renaming is needed.
+
+- Pallet: \`Pallet - Ash.png\`, \`Pallet - Gary.png\`, \`Pallet - Professor.png\`, \`Pallet - Leaf.png\`
+- Pewter: \`Pewter - Brock.png\`, \`Pewter - Flint.png\`, \`Pewter - Opal.png\`, \`Pewter - Boulder.png\`
+- Each PNG is 1086 × 1448 RGBA. \`public/sprites.js\` extracts a **3×3 grid** and displays each cell at a logical 48 × 64 pixel resolution with nearest-neighbor scaling.
+- Frame order: **idle**, **running A**, **running B**, **dribble**, **pass**, **shoot**, **block/jump**, **dunk**, **celebrate**. Running alternates the two available poses; the others are key poses, not yet full multipose animation sequences.
+- Server snapshots contain a persistent \`profileId\`, so sprite selection always follows the athlete you picked even if their in-game court slot changes.
+- The **team draft portraits** and **live match characters** both use these sprite sheets. If an asset is missing, slow to load, or the opponent belongs to an unfinished team, the original procedural character artwork remains in place.
+- The basketball, scoreboard, shot meter, and player selection ring are still rendered by the existing game code.
+
+### Preview and troubleshoot
+While the Codespace is running, open **\`/sprite-lab.html\`** on the same forwarded game URL. Pick a character to see the original sheet and the exact nine cropped frames the game uses. Adjust the temporary inset, margin, or gap controls to test cropping. These changes affect only the diagnostic preview; once the values look correct they can be configured in \`public/sprites.js\`.
+
+The source PNG having an RGBA channel **does not prove its background is transparent**. Sprite Lab reports an approximate transparent-pixel percentage; if it says 0% fully transparent and you see a visible background in every frame, remove the original backgrounds and replace those PNGs in GitHub.
+
+### Adding the remaining five teams
+Add four equally organized PNGs to each team's folder. Then append the corresponding character roster IDs and exact filenames to the \`characters\` map in \`public/sprites.js\`. This does not require changes to multiplayer or the basketball physics.
