@@ -158,7 +158,7 @@ function renderDraft(){
   for(const portrait of $('rosterCards').querySelectorAll('canvas')){
     const p=team.players.find(p=>p.id===portrait.dataset.portrait),c=portrait.getContext('2d');
     c.imageSmoothingEnabled=false;
-    if(!SpriteArt.draw(c,p,32,77,1,0,'idle',{face:1}))drawAvatar(c,p,team,32,73,1.9,0,'idle',false);
+    if(!SpriteArt.draw(c,p,32,77,1,0,'idle',{face:1,direction:3}))drawAvatar(c,p,team,32,73,1.9,0,'idle',false);
   }
   $('readyBtn').disabled=!allowed&&!mine?.ready||!selected||(isSoloSide&&!support);
   $('readyBtn').textContent=mine?.ready?'✓ READY — TAP TO CHANGE':'LOCK LINEUP / READY';
