@@ -2,7 +2,8 @@
 /**
  * BOOMSHAKALAKA shared atlas renderer.
  * Legacy: 3 columns x 3 rows, nine key poses.
- * Advanced: 10 columns x 8 rows; rows N,NE,E,SE,S,SW,W,NW.
+ * Advanced: 10 columns x 7 painted rows (70 frames total).
+ * Game retains eight directions: missing West is mirrored from the East row.
  *
  * Advanced columns:
  * 0 idle A, 1 idle B, 2-5 run A-D, 6-7 dribble A-B,
@@ -32,7 +33,19 @@ const SpriteArt=(()=>{
   const advancedColumns=Object.freeze(['idle-a','idle-b','run-a','run-b','run-c','run-d',
     'dribble-a','dribble-b','pass-windup','pass-release']);
   const cache=new Map(),observers=new Set();
-  const cols=3,rows=3,W=48,H=64,ADV_COLS=10,ADV_ROWS=8;
+  const cols=3,rows=3,W=48,H=64,ADV_COLS=10,ADV_ROWS=7;
+  // Uploaded seven-row artwork: N, NE, E, SE, S, SW, NW.
+  // West has no unique painted row; flip the east-facing sheet horizontally.
+  const advancedDirections=Object.freeze([
+    {row:0,flipX:false}, // N
+    {row:1,flipX:false}, // NE
+    {row:2,flipX:false}, // E
+    {row:3,flipX:false}, // SE
+    {row:4,flipX:false}, // S
+    {row:5,flipX:false}, // SW
+    {row:2,flipX:true},  // W (mirrored E)
+    {row:6,flipX:false}  // NW
+  ]);
   const root='/assets/sprites/';
   const supported=new Set(['idle','run','dribble','pass']);
   const duration=Object.freeze({idle:.55,run:.115,dribble:.16,pass:.14});
@@ -115,11 +128,13 @@ const SpriteArt=(()=>{
       sw:Math.max(1,cellW-inset*2),sh:Math.max(1,cellH-inset*2)};
   }
   function advancedRect(imageWidth,imageHeight,direction,column){
+    const dir=((Math.trunc(Number.isFinite(direction)?direction:4)%8)+8)%8;
+    const {row,flipX}=advancedDirections[dir];
+    const col=Math.max(0,Math.min(ADV_COLS-1,Math.trunc(Number.isFinite(column)?column:0)));
+    // 1402x1122 is not divisible evenly by the frame grid.
+    // Fractional rectangles avoid creeping row offsets and are supported by Canvas.
     const cw=imageWidth/ADV_COLS,ch=imageHeight/ADV_ROWS;
-    const row=((Math.trunc(direction)%8)+8)%8,col=Math.max(0,Math.min(9,Math.trunc(column)));
-    // Floating source boundaries retain precision for uploaded 1402x1122
-    // artwork; no need to resample, stretch or overwrite the originals.
-    return {sx:col*cw,sy:row*ch,sw:cw,sh:ch};
+    return {sx:col*cw,sy:row*ch,sw:cw,sh:ch,flipX,row};
   }
   /**
    * Try advanced for actions with dedicated 8-way art, otherwise use old
@@ -139,13 +154,14 @@ const SpriteArt=(()=>{
     const direction=Number.isInteger(opts.direction)?opts.direction:
       Number.isInteger(player.facing8)?player.facing8:(player.face<0?6:2);
     const col=Number.isInteger(opts.frame)?opts.frame:advancedFrameFor(animation,opts.animTime??time);
-    const {sx,sy,sw,sh}=advancedRect(entry.image.naturalWidth,entry.image.naturalHeight,direction,col);
+    const {sx,sy,sw,sh,flipX}=advancedRect(entry.image.naturalWidth,entry.image.naturalHeight,direction,col);
     // Uploaded directional cells are approximately square (not 3:4).
     // Preserve their original aspect ratio to avoid squashing heads/faces.
     const fit=58*scale/Math.max(sw,sh),dw=sw*fit,dh=sh*fit;
     c.save();
     c.imageSmoothingEnabled=false;
     c.translate(Math.round(x),Math.round(y));
+    if(flipX)c.scale(-1,1);
     c.drawImage(entry.image,sx,sy,sw,sh,-dw/2,-dh+4*scale,dw,dh);
     c.restore();
     return true;
@@ -168,7 +184,7 @@ const SpriteArt=(()=>{
     return {id,variant,path:filePath(id,variant),state:state(id,variant),
       width:e?.image?.naturalWidth||null,height:e?.image?.naturalHeight||null,error:e?.error||null};
   }
-  return {characters,directional,cells,directions,advancedColumns,W,H,cols,rows,
+  return {characters,directional,cells,directions,advancedColumns,advancedDirections,ADV_COLS,ADV_ROWS,W,H,cols,rows,
     filePath,advancedPath,state,load,preloadTeam,preloadMatch,onChange,
     directionFromVector,frameFor,advancedFrameFor,sourceRect,advancedRect,draw,inspect};
 })();
