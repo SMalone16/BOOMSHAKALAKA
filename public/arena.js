@@ -1,6 +1,17 @@
 'use strict';
 const canvas=$('gameCanvas'),ctx=canvas.getContext('2d');
-let cameraX=160,frameTime=0,lastSend=0,audio=null,particles=[],smoothed=new Map();
+let cameraX=160,frameTime=0,lastSend=0,audio=null,particles=[],smoothed=new Map(),animTimers=new Map();
+// Client-side animation clocks continue between server snapshots (15Hz).
+// Action changes restart at frame zero; ordinary run/dribble cycles persist.
+function animationTime(id,animation,dt,playing=true){
+  const current=animTimers.get(id);
+  if(!current||current.animation!==animation){
+    animTimers.set(id,{animation,elapsed:0});return 0;
+  }
+  if(playing)current.elapsed+=Math.max(0,Math.min(.06,dt));
+  return current.elapsed;
+}
+
 function rect(c,x,y,w,h,color){c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))}
 function line(c,x,y,x2,y2,color,width=1){c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.moveTo(Math.round(x)+.5,Math.round(y)+.5);c.lineTo(Math.round(x2)+.5,Math.round(y2)+.5);c.stroke()}
 function txt(c,value,x,y,size,color='#fff',align='left'){
@@ -134,8 +145,10 @@ function renderGame(now,dt){
     const x=sm.x-cameraX,y=sm.y-p.z;
     if(x< -50||x>690)continue;
     c.fillStyle='#2a283588';c.beginPath();c.ellipse(x,p.y+3,16,5,0,0,7);c.fill();
-    if(!SpriteArt.draw(c,p,x,y,1.08,time,p.dunkTime?'dunk':p.anim,{face:p.face})){
-      drawAvatar(c,p,team,x,y,1.32,time,p.dunkTime?'dunk':p.anim,g.fireId===p.id);
+    const animation=p.dunkTime>0?'dunk':p.anim;
+    const elapsed=animationTime(p.id,animation,dt,g.phase==='PLAY'&&!g.pause);
+    if(!SpriteArt.draw(c,p,x,y,1.08,time,animation,{face:p.face,direction:p.facing8,animTime:elapsed})){
+      drawAvatar(c,p,team,x,y,1.32,time,animation,g.fireId===p.id);
     }
     const human=g.controllers?.find(m=>m.slot===p.id);
     if(human){rect(c,x-18,y-71,36,13,'#172b49');txt(c,human.initials,x,y-65,10,'#ffeda7','center')}
