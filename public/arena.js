@@ -113,6 +113,7 @@ function hoop(c,worldX,cam,front){
   }
 }
 function arcadeSound(kind){
+  if(window.arcadeAudioEnabled===false)return;
   try{
     audio=audio||new (window.AudioContext||window.webkitAudioContext)();
     if(audio.state==='suspended')audio.resume();
