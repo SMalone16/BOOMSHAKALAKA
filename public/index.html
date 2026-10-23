@@ -2,78 +2,141 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0c1025">
-<title>BOOMSHAKALAKA! · Retro Hoops</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080e26">
+<title>BOOMSHAKALAKA! · Retro Arcade Basketball</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <div class="shell">
   <header class="topbar">
-    <div class="brand"><span class="logoBall">●</span><span>BOOM<span class="brandGold">SHAKALAKA!</span></span></div>
-    <div class="connection"><i id="connectionDot"></i><span id="connectionText">Connecting…</span></div>
+    <div class="brand"><span class="logoBall" aria-hidden="true">✹</span><span>BOOM<span class="brandGold">SHAKALAKA!</span></span></div>
+    <div class="connection"><i id="connectionDot" aria-hidden="true"></i><span id="connectionText">Connecting…</span></div>
   </header>
   <main>
     <section id="home" class="screen active">
-      <div class="hero">
-        <div class="eyebrow">ORIGINAL 16-BIT ARCADE BASKETBALL</div>
-        <h1>BRING THE <em>BOOM.</em></h1>
-        <p>Seven teams. Twenty-eight legends. Two-on-two chaos. Team up or face off with 1–4 humans plus CPU players.</p>
-        <div class="heroCourt"><div class="heroBall">🏀</div><div class="heroText">2 ON 2 <span>★</span> FULL COURT FRENZY</div></div>
-        <div class="actions"><button id="soloBtn" class="btn primary">1 PLAYER · VS CPU</button><button id="hostBtn" class="btn accent">HOST MULTIPLAYER</button></div>
-        <div class="joinRow"><input id="joinCode" maxlength="8" spellcheck="false" placeholder="8-CHAR LOBBY CODE" aria-label="Lobby code"><button id="joinBtn" class="btn ghost">JOIN A LOBBY →</button></div>
+      <div class="arenaScene homeScene">
+        <div class="stageLights" aria-hidden="true"></div>
+        <div class="heroBanner leftBanner"><span class="bannerMark">✦</span><span>PALLET<br>PALADINS</span></div>
+        <div class="heroBanner rightBanner"><span class="bannerMark">◆</span><span>PEWTER<br>POWER</span></div>
+        <div class="homeHero">
+          <div class="pixelBurst" aria-hidden="true">⚡ 🏀 ⚡</div>
+          <div class="gameLogo" aria-label="BOOMSHAKALAKA"><span>BOOM</span><span>SHAKALAKA!</span></div>
+          <p class="heroTag">2-ON-2 · RETRO ARCADE BASKETBALL</p>
+          <p class="heroPitch">PICK YOUR TEAM. FIND YOUR DUO. BRING THE BOOM.</p>
+          <div class="homeActionStack">
+            <button id="soloBtn" class="btn primary mega" type="button">🏀 SINGLE PLAYER <span aria-hidden="true">▶</span></button>
+            <button id="multiplayerBtn" class="btn electric mega" type="button">♟ MULTIPLAYER <span aria-hidden="true">▶</span></button>
+          </div>
+          <div class="homeSecondary">
+            <button id="howBtn" class="btn ghost" type="button">? HOW TO PLAY</button>
+            <button id="optionsBtn" class="btn ghost" type="button">⚙ SETTINGS</button>
+          </div>
+          <div class="homeFoot">7 TEAMS · 28 PLAYERS · 1–4 HUMAN PLAYERS</div>
+        </div>
+        <div class="heroSprite heroSpriteLeft" aria-hidden="true"><canvas id="homeLeaf" width="154" height="180"></canvas></div>
+        <div class="heroSprite heroSpriteRight" aria-hidden="true"><canvas id="homeBrock" width="154" height="180"></canvas></div>
       </div>
-      <div class="featurebar"><span>⚡ REAL-TIME MULTIPLAYER</span><span>🎮 KEYBOARD + TOUCH</span><span>🏆 7 ORIGINAL TEAMS</span></div>
     </section>
+
+    <section id="multiplayer" class="screen">
+      <div class="sectionHeading"><div><div class="eyebrow">ONLINE ARCADE</div><h2>MULTIPLAYER</h2></div><button class="btn ghost" id="backFromMulti">← BACK</button></div>
+      <div class="gatewayGrid">
+        <div class="panel gatewayCard">
+          <div class="gatewayIcon">👑</div><h3>HOST A GAME</h3>
+          <p class="muted">Create a lobby for 2–4 people. Share one link; teammates join directly.</p>
+          <button class="btn primary full" id="hostBtn">CREATE LOBBY →</button>
+        </div>
+        <div class="panel gatewayCard">
+          <div class="gatewayIcon">🔗</div><h3>JOIN A GAME</h3>
+          <p class="muted">Use an invitation link to join instantly, or enter a code if you have one.</p>
+          <div class="joinRow"><input id="joinCode" maxlength="8" spellcheck="false" placeholder="8-CHAR LOBBY CODE" aria-label="Lobby code"><button id="joinBtn" class="btn electric">JOIN →</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="soloSelect" class="screen">
+      <div class="sectionHeading"><div><div class="eyebrow">SOLO ARCADE · PLAY AGAINST THE CPU</div><h2>CHOOSE THE MATCHUP</h2></div><button id="soloExit" class="btn ghost">← BACK</button></div>
+      <div class="stepStrip"><span class="current">1 · YOUR TEAM</span><span>2 · CPU OPPONENT</span><span>3 · PICK YOUR DUO</span></div>
+      <div class="matchupGrid">
+        <div class="matchupPanel" id="soloOwnPanel">
+          <div class="teamPanelHeading">YOUR TEAM</div>
+          <div class="teamPicker">
+            <button class="arrowBtn" id="soloMyPrev" aria-label="Previous player team">◀</button>
+            <div class="matchupLogo" id="soloMyLogo"></div>
+            <button class="arrowBtn" id="soloMyNext" aria-label="Next player team">▶</button>
+          </div>
+          <h3 id="soloMyName"></h3><div class="teamSlogan" id="soloMyTag"></div>
+          <div id="soloMyRoster" class="miniRoster"></div>
+        </div>
+        <div class="versusMark">VS</div>
+        <div class="matchupPanel" id="soloOppPanel">
+          <div class="teamPanelHeading">CPU OPPONENT</div>
+          <div class="teamPicker">
+            <button class="arrowBtn" id="soloOppPrev" aria-label="Previous opponent team">◀</button>
+            <div class="matchupLogo" id="soloOppLogo"></div>
+            <button class="arrowBtn" id="soloOppNext" aria-label="Next opponent team">▶</button>
+          </div>
+          <h3 id="soloOppName"></h3><div class="teamSlogan" id="soloOppTag"></div>
+          <div id="soloOppRoster" class="miniRoster"></div>
+        </div>
+      </div>
+      <div class="soloAdvance"><button id="soloContinue" class="btn primary mega">CONFIRM MATCHUP · SELECT DUO ▶</button></div>
+    </section>
+
     <section id="lobby" class="screen">
-      <div class="sectionHeading"><div><div class="eyebrow">MULTIPLAYER ARENA</div><h2>THE LOCKER ROOM</h2></div><span class="chip" id="lobbyCode"></span></div>
-      <div class="panelGrid">
+      <div class="sectionHeading"><div><div class="eyebrow">YOUR ARENA · ONLINE MATCH</div><h2>MULTIPLAYER LOBBY</h2></div><span class="chip" id="lobbyCode"></span></div>
+      <div class="inviteHero panel">
+        <div><h3>🔗 INVITE YOUR PLAYERS</h3><p class="muted">Send this link—players enter this lobby automatically. No code typing needed.</p></div>
+        <div class="joinRow"><input id="inviteUrl" readonly aria-label="Invite URL"><button id="copyLink" class="btn electric">COPY INVITE LINK</button></div>
+        <p class="muted tiny">The Codespace server must be running and the forwarded port must be publicly accessible to invited players.</p>
+      </div>
+      <div class="lobbyPlayers" id="lobbyPlayers"></div>
+      <div class="panelGrid lobbyBottom">
         <div class="panel">
-          <h3>1. CLAIM YOUR INITIALS</h3>
-          <p class="muted">Exactly three letters. Your initials are visible above your player in-game.</p>
-          <div class="joinRow"><input id="initials" maxlength="3" placeholder="AAA" autocomplete="off" aria-label="Your three initials"><button class="btn primary" id="setInitials">SET INITIALS</button></div>
-          <h3>2. SHARE THIS LOBBY</h3>
-          <div class="joinRow"><input id="inviteUrl" readonly aria-label="Invite URL"><button id="copyLink" class="btn accent">COPY LINK</button></div>
-          <p class="muted tiny">Codespaces must be running and port 3000 must be reachable by your players.</p>
-          <div id="lobbyPlayers" class="lobbyPlayers"></div>
+          <h3>PLAYER IDENTITY</h3><p class="muted">Choose three initials for your in-game nameplate.</p>
+          <div class="joinRow"><input id="initials" maxlength="3" placeholder="AAA" autocomplete="off" aria-label="Your three initials"><button class="btn primary" id="setInitials">SAVE INITIALS</button></div>
         </div>
-        <div class="panel">
-          <div id="hostOptions"></div>
-          <div class="rules"><h3>GAME RULES</h3><p>Each side fields two characters. With fewer than four human players, AI fills the open positions. One human on a side selects both characters; two humans each choose their own.</p></div>
-        </div>
+        <div class="panel"><div id="hostOptions"></div></div>
       </div>
     </section>
+
     <section id="draft" class="screen">
-      <div class="sectionHeading"><div><div class="eyebrow">TEAM & CHARACTER DRAFT</div><h2>BUILD YOUR DUO</h2></div><span class="chip" id="draftInfo">TEAM SELECTION</span></div>
+      <div class="sectionHeading"><div><div class="eyebrow">YOUR LINEUP · TWO ON TWO</div><h2>CHOOSE YOUR PLAYERS</h2></div><span class="chip" id="draftInfo">TEAM SELECTION</span></div>
       <div class="draftLayout">
         <div class="panel teamPanel">
+          <div class="eyebrow">TEAM SELECTION</div>
           <div class="teamHeader"><button id="prevTeam" class="arrowBtn" aria-label="Previous team">◀</button><div class="teamIcon" id="teamIcon">★</div><button id="nextTeam" class="arrowBtn" aria-label="Next team">▶</button></div>
           <div id="teamName" class="teamName"></div><p id="teamDesc" class="muted"></p>
-          <button id="lockTeam" class="btn accent full">LOCK IN TEAM</button><p id="teamHelp" class="muted tiny"></p>
+          <button id="lockTeam" class="btn electric full">LOCK IN TEAM</button><p id="teamHelp" class="muted tiny"></p>
           <div id="pickSummary" class="pickSummary"></div>
-          <button id="readyBtn" class="btn primary full" disabled>READY FOR TIP-OFF</button>
+          <button id="readyBtn" class="btn primary full" disabled>CONFIRM DUO</button>
+          <button id="draftBackSolo" class="btn ghost full" hidden>← CHANGE MATCHUP</button>
         </div>
         <div class="panel rosterPanel">
-          <div class="eyebrow">CHOOSE YOUR LINEUP</div><div id="rosterCards" class="rosterCards"></div>
+          <div class="eyebrow">SELECT YOUR ATHLETES</div><div id="rosterCards" class="rosterCards"></div>
         </div>
         <div class="panel statsPanel">
-          <div class="eyebrow">PLAYER SCOUTING REPORT</div><h3 id="scoutName">SELECT A PLAYER</h3><div id="scoutType" class="muted"></div>
-          <canvas id="radar" width="370" height="315" aria-label="Six-axis character stats radar chart"></canvas>
+          <div class="eyebrow">SCOUTING REPORT</div><h3 id="scoutName">SELECT A PLAYER</h3><div id="scoutType" class="muted"></div>
+          <canvas id="radar" width="370" height="315" aria-label="Six-axis player stat radar chart"></canvas>
           <div class="radarLegend"><span>SPEED</span><span>3-POINT</span><span>DUNK</span><span>BLOCK / REBOUND</span><span>STEAL</span><span>PASS</span></div>
         </div>
       </div>
     </section>
+
     <section id="play" class="screen">
       <div class="gameTop"><div><div class="eyebrow">BOOMSHAKALAKA ARENA</div><div id="gameMatchLabel">LIVE 2 ON 2</div></div><button id="pauseBtn" class="btn ghost small">HOST: PAUSE</button></div>
       <div class="gameWrap"><canvas id="gameCanvas" width="640" height="360" tabindex="0" aria-label="Basketball game"></canvas><div id="gameOverlay" class="gameOverlay hidden"></div></div>
-      <div class="controlsInfo"><span><b>WASD</b> MOVE</span><span><b>J</b> HOLD / RELEASE SHOOT</span><span><b>K</b> PASS / STEAL</span><span><b>I</b> BLOCK</span><span><b>L</b> SPRINT</span><span><b>Q</b> SWITCH (SOLO SIDE)</span></div>
+      <div class="controlsInfo"><span><b>WASD</b> MOVE</span><span><b>J</b> SHOOT</span><span><b>K</b> PASS / STEAL</span><span><b>I</b> BLOCK</span><span><b>L</b> SPRINT</span><span><b>Q</b> SWITCH (SOLO)</span></div>
       <div class="touchControls" id="touchControls"><div class="dpad"><button data-key="up">▲</button><div><button data-key="left">◀</button><button data-key="down">▼</button><button data-key="right">▶</button></div></div><div class="touchActions"><button data-key="pass">PASS / STEAL</button><button data-key="shoot" class="shoot">SHOOT</button><button data-key="jump">BLOCK</button><button data-key="sprint">RUN</button><button data-key="switch">SWITCH</button></div></div>
     </section>
   </main>
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modalPanel panel"><button id="closeModal" class="modalClose" aria-label="Close">✕</button><h2 id="modalTitle"></h2><div id="modalBody"></div></div></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <footer>BOOMSHAKALAKA! · CLASSROOM ARCADE PROJECT · ORIGINAL PIXEL ART · NO ACCOUNTS REQUIRED</footer>
+  <footer>BOOMSHAKALAKA · ORIGINAL CLASSROOM ARCADE · 7 TEAMS · NO ACCOUNTS REQUIRED</footer>
 </div>
 <script src="/sprites.js" defer></script>
+<script src="/team-brand.js" defer></script>
 <script src="/ui.js" defer></script>
 <script src="/arena.js" defer></script>
 </body>
