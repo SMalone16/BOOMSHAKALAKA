@@ -9,8 +9,10 @@
  * 0 idle A, 1 idle B, 2-5 run A-D, 6-7 dribble A-B,
  * 8 pass windup, 9 pass release.
  *
- * Keep the legacy atlas for shoot/block/dunk/celebrate until those frames
- * are painted for all 8 directions. All sprite art is purely client-side.
+ * Every action keeps the character's directional artwork. Actions without a
+ * dedicated painted pose (shoot/block/dunk/celebrate) reuse the closest key
+ * poses; they are NOT additional hand-painted animation frames.
+ * Optional legacy 3x3 sheets remain supported if later re-added.
  */
 const SpriteArt=(()=>{
   const characters=Object.freeze({
@@ -23,10 +25,16 @@ const SpriteArt=(()=>{
     'pewter-2':'pewter/Pewter - Opal.png',
     'pewter-3':'pewter/Pewter - Boulder.png'
   });
-  // Filenames are exact: the user uploaded both with a double .png extension.
+  // All eight 7x10 atlases use their normalized .png filenames.
   const directional=Object.freeze({
-    'pallet-0':'pallet/ash.png.png',
-    'pallet-3':'pallet/leaf.png.png'
+    'pallet-0':'pallet/ash.png',
+    'pallet-1':'pallet/gary.png',
+    'pallet-2':'pallet/professor.png',
+    'pallet-3':'pallet/leaf.png',
+    'pewter-0':'pewter/brock.png',
+    'pewter-1':'pewter/flint.png',
+    'pewter-2':'pewter/opal.png',
+    'pewter-3':'pewter/boulder.png'
   });
   const cells=Object.freeze(['idle','run-a','run-b','dribble','pass','shoot','block','dunk','celebrate']);
   const directions=Object.freeze(['N','NE','E','SE','S','SW','W','NW']);
@@ -47,11 +55,17 @@ const SpriteArt=(()=>{
     {row:6,flipX:false}  // NW
   ]);
   const root='/assets/sprites/';
-  const supported=new Set(['idle','run','dribble','pass']);
-  const duration=Object.freeze({idle:.55,run:.115,dribble:.16,pass:.14});
-  const sequences=Object.freeze({
-    idle:[0,1],run:[2,3,4,5],dribble:[6,7],pass:[8,9]
+  const duration=Object.freeze({
+    idle:.55,run:.115,dribble:.16,pass:.14,
+    shoot:.21,block:.16,jump:.16,dunk:.2,celebrate:.35
   });
+  // Only idle/run/dribble/pass have purpose-drawn 70-frame poses.
+  // Other actions remain character-consistent directional stand-ins.
+  const sequences=Object.freeze({
+    idle:[0,1],run:[2,3,4,5],dribble:[6,7],pass:[8,9],
+    shoot:[8,9],block:[0,9],jump:[0,9],dunk:[2,9],celebrate:[0,1]
+  });
+  const holdLast=new Set(['pass','shoot','block','jump','dunk']);
   function getId(player){
     const id=player?.profileId||player?.spriteId||player?.id;
     return typeof id==='string'?id:null;
@@ -87,8 +101,8 @@ const SpriteArt=(()=>{
     return entry;
   }
   function preloadTeam(teamId){
-    for(const id of Object.keys(characters))if(id.startsWith(teamId+'-')){
-      load(id);if(directional[id])load(id,'advanced');
+    for(const id of Object.keys(directional))if(id.startsWith(teamId+'-')){
+      load(id,'advanced');
     }
   }
   function preloadMatch(teamIds){for(const id of teamIds||[])preloadTeam(id)}
@@ -114,7 +128,7 @@ const SpriteArt=(()=>{
     const frameTime=duration[animation]||duration.idle;
     // Epsilon keeps exact frame boundaries stable across floating-point rounding.
     const index=Math.max(0,Math.floor(Math.max(0,seconds)/frameTime+1e-7));
-    return animation==='pass'?list[Math.min(index,list.length-1)]:list[index%list.length];
+    return holdLast.has(animation)?list[Math.min(index,list.length-1)]:list[index%list.length];
   }
   function sourceRect(imageWidth,imageHeight,index,layout={}){
     const marginX=Number(layout.marginX)||0,marginY=Number(layout.marginY)||0;
@@ -140,13 +154,14 @@ const SpriteArt=(()=>{
     return {sx,sy,sw:ex-sx,sh:ey-sy,flipX,row};
   }
   /**
-   * Try advanced for actions with dedicated 8-way art, otherwise use old
-   * nine-pose art. On missing/loading files returns false so drawAvatar works.
-   * x,y is the character's ground anchor. Facing is not mirrored for advanced.
+   * Always use the advanced atlas when available, including stand-in poses
+   * for shoot/block/dunk/celebrate, so player identity never vanishes.
+   * For unsupported characters or loading errors drawAvatar handles fallback.
+   * (x,y) is the court-floor anchor, independent of animation orientation.
    */
   function draw(c,player,x,y,scale=1,time=0,animation='idle',opts={}){
     const id=getId(player);
-    const mode=directional[id]&&supported.has(animation)?'advanced':'legacy';
+    const mode=directional[id]?'advanced':'legacy';
     const entry=load(id,mode);
     if(!entry||entry.state!=='ready'){
       // If advanced asset is slow or invalid, maintain old artwork instead.
