@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const views=['home','multiplayer','soloSelect','lobby','draft','play'];
 let ws=null,room=null,me=null,token=null,code=null,browse=0,selected=null,support=null,game=null,connected=false,lastEvent=-1,eventCall=null;
-let soloMyIndex=0,soloOppIndex=1,soloConfirmed=false;
+let soloMyIndex=0,soloOppIndex=1,soloConfirmed=false,homeTeams=null;
 window.arcadeAudioEnabled=localStorage.getItem('boom-audio')!=='off';
 const keys={up:false,down:false,left:false,right:false,shoot:false,pass:false,sprint:false,jump:false,switch:false};
 const icons={pallet:'✦',pewter:'◆',cerulean:'≋',vermillion:'ϟ',lavender:'☾',saffron:'✿',cinnabar:'♨'};
@@ -75,7 +75,7 @@ function bind(id,fn){$(id).addEventListener('click',fn)}
 bind('soloBtn',()=>{soloConfirmed=false;send({t:'solo'})});
 bind('multiplayerBtn',()=>show('multiplayer'));
 bind('backFromMulti',()=>show('home'));
-bind('soloExit',()=>show('home'));
+bind('soloExit',()=>location.assign('/'));
 bind('draftBackSolo',()=>{if(room?.solo){soloConfirmed=false;selected=null;support=null;show('soloSelect');renderSoloSelect()}});
 bind('hostBtn',()=>send({t:'create'}));
 bind('joinBtn',()=>{
@@ -85,9 +85,13 @@ bind('joinBtn',()=>{
 });
 bind('setInitials',()=>send({t:'initials',value:$('initials').value.trim()}));
 bind('copyLink',()=>{
-  navigator.clipboard?.writeText($('inviteUrl').value).then(()=>toast('INVITE LINK COPIED!')).catch(()=>{
-    $('inviteUrl').select();toast('Select and copy the highlighted link.');
-  });
+  const field=$('inviteUrl'),fallback=()=>{
+    field.focus();field.select();
+    try{if(document.execCommand('copy'))return toast('INVITE LINK COPIED!')}catch{}
+    toast('Select and copy the highlighted invitation link.');
+  };
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(field.value).then(()=>toast('INVITE LINK COPIED!')).catch(fallback);
+  else fallback();
 });
 const captain=()=>room?.ownPicks[0]?.id===me;
 bind('prevTeam',()=>{if(!room.myTeam||captain()){browse=(browse+room.roster.length-1)%room.roster.length;renderDraft()}});
@@ -239,7 +243,7 @@ function paintAthlete(canvas,player,team,scale=1.9){
 function drawHomeAthletes(){
   const leaf=$('homeLeaf'),brock=$('homeBrock');
   if(!leaf||!brock)return;
-  const teams=room?.roster;
+  const teams=room?.roster||homeTeams;
   if(!teams)return;
   for(const [canvas,team,player] of [[leaf,teams[0],teams[0].players[3]],[brock,teams[1],teams[1].players[0]]]){
     SpriteArt.preloadTeam(team.id);paintAthlete(canvas,player,team,2.7);
@@ -308,4 +312,6 @@ $('modalBody').addEventListener('change',e=>{
 
 code=new URLSearchParams(location.search).get('room')?.toUpperCase()||null;
 if(code)$('joinCode').value=code;
+fetch('/api/roster').then(r=>{if(!r.ok)throw Error('Roster not available');return r.json()})
+  .then(roster=>{homeTeams=roster;drawHomeAthletes()}).catch(()=>{});
 connect();
