@@ -111,3 +111,22 @@ npm run sprites:slice -- pewter-0
 ### Extending the roster
 
 Place future 7×10 atlases in `public/assets/sprites/<team>/`, then add their exact filename and roster ID to the `directional` map in `public/sprites.js`. This automatically enables character selection previews and animation in solo, 2-, 3-, and 4-player games without changing the multiplayer server or writing separate movement logic.
+
+
+## Arcade menu redesign
+
+The responsive front end has a new illustrated arena title screen, original SVG crests for all seven teams, real roster-sprite previews for Pallet/Pewter, and a clearer player choice path. Artwork is layered HTML/CSS/SVG rather than a flattened screenshot, so menu actions stay clickable and accessible.
+
+**Single player:** Title → Single Player → pick *your* team and *CPU opponent* independently → select your two athletes (you plus CPU partner) → Tip Off. Solo games no longer require initials or show the multiplayer lobby/code. CPU team choice is applied server-side before the match starts for animation playtesting.
+
+**Multiplayer:** Title → Multiplayer → Host or Join. Host gets one invite URL using the Codespace's actual public address and ?room=CODE, with a Copy Invite Link button. Joining by link enters automatically; typing the eight-digit code remains a fallback. Players set initials, host chooses random or assigned teams, then everyone follows the existing private team/player draft and match flow. The lobby has Exit.
+
+**Teams/players:** Rosters and hexagonal stat chart use authoritative server/roster.js data. SVG badges and taglines are in public/team-brand.js and can be extended without touching basketball physics. Pallet/Pewter cards use actual 7×10 sprite atlases; unfinished teams retain procedural portraits.
+
+**Art assets:** public/assets/ui/arena.svg is a new original vector stadium backdrop matching the neon-pixel-arcade visual language of the concept art. The earlier generated mockups are design references, *not* noninteractive backgrounds.
+
+**Settings/help:** How to Play describes current controls. Sound Settings toggles actual game sound effects, saved locally.
+
+**Test:** In Codespaces, choose the feature/arcade-menu-overhaul branch and run npm install then npm start. To share invites, keep Codespaces running and make port 3000 publicly reachable to trusted testers. Browser visual review is still required; automated tests cover HTML bindings, routes, WebSockets, and sprite assets.
+
+This branch includes PR #5's Pallet/Pewter 70-frame work because that PR was open when the UI branch was created. If PR #5 merges first, the remaining UI diff will become smaller automatically.
