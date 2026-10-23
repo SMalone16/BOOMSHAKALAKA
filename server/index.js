@@ -32,7 +32,7 @@ function roomSummary(room,m){
   const myTeam=room.sides[m.side].teamId;
   return {t:'room',code:room.code,phase:room.phase,mode:room.mode,solo:room.solo,
     isHost:room.host===m.id,me:m.id,mySide:m.side,members:room.members.map(p=>({id:p.id,initials:p.initials,side:p.side,connected:p.connected,ready:p.ready})),
-    roster:teams,myTeam,ownPicks:sideMembers.map(p=>({id:p.id,initials:p.initials,pick:p.pick,support:p.support,ready:p.ready})),
+    roster:teams,myTeam,soloOpponent:room.solo?room.sides[1].teamId:null,ownPicks:sideMembers.map(p=>({id:p.id,initials:p.initials,pick:p.pick,support:p.support,ready:p.ready})),
     otherTeamReady:room.members.filter(p=>p.side!==m.side&&p.ready).length,
     control:m.control,error:null};
 }
@@ -59,7 +59,9 @@ function enterRoom(ws,room,token){
   if(room.members.length===1){room.host=m.id;room.sides[1].teamId=teams[1].id}
   else if(room.mode==='random')m.side=room.members.length===2?1:(room.members.length===3?0:1);
   else m.side=membersSide(room,0).length>2?1:0;
-  send(ws,{t:'joined',code:room.code,token:m.token,me:m.id});broadcast(room);maybeFull(room);
+  send(ws,{t:'joined',code:room.code,token:m.token,me:m.id});
+  if(room.solo){m.initials='YOU';beginDraft(room)}
+  else {broadcast(room);maybeFull(room)}
 }
 function sidesValid(room){
   const left=membersSide(room,0).length,right=membersSide(room,1).length;
@@ -74,7 +76,7 @@ function beginDraft(room){
   if(room.phase!=='lobby')return;
   if(room.members.length<2&&!room.solo)return;
   if(room.members.some(m=>!/^[A-Z]{3}$/.test(m.initials)))return;
-  if(room.solo){room.members[0].side=0;room.sides[1].teamId=teams[Math.floor(Math.random()*(teams.length-1))+1].id}
+  if(room.solo){room.members[0].side=0;room.sides[1].teamId=room.sides[1].teamId||teams[1].id}
   else if(room.mode==='random')arrangeRandom(room);
   if(!room.solo&&!sidesValid(room))return;
   room.phase='draft';
@@ -139,6 +141,15 @@ function handle(ws,data){
     if(room.members.some(p=>!p.initials)){error(ws,'Everyone must enter three initials.');return}
     if(room.mode==='assigned'&&!sidesValid(room)){error(ws,'Assign one or two players to each team.');return}
     beginDraft(room);return;
+  }
+  if(data.t==='opponent-team'&&room.phase==='draft'&&room.solo&&room.host===m.id){
+    const id=String(data.id||'');
+    if(!findTeam(id)){error(ws,'Unknown opponent team.');return}
+    if(room.sides[1].teamId!==id){
+      room.sides[1].teamId=id;
+      room.members.forEach(player=>{player.ready=false});
+    }
+    broadcast(room);return;
   }
   if(data.t==='team'){chooseTeam(room,m,String(data.id||''));return}
   if(data.t==='pick'&&room.phase==='draft'){
