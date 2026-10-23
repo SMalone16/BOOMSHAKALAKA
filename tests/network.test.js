@@ -73,8 +73,14 @@ test('solo player can choose two teammates and enter a CPU match', {timeout:1500
   try{
     host=await connect(port);host.send({t:'solo'});
     await host.receive(d=>d.t==='joined');
-    host.send({t:'initials',value:'CPU'});
-    await host.receive(d=>d.t==='room'&&d.phase==='draft');
+    const initialDraft=await host.receive(d=>d.t==='room'&&d.phase==='draft');
+    assert.equal(initialDraft.solo,true);
+    assert.equal(initialDraft.members[0].initials,'YOU','solo skips lobby/initials');
+    assert.equal(initialDraft.soloOpponent,teams[1].id);
+    // The solo player may freely choose any opponent, including teams whose
+    // updated animation sheets they want to playtest.
+    host.send({t:'opponent-team',id:teams[0].id});
+    await host.receive(d=>d.t==='room'&&d.phase==='draft'&&d.soloOpponent===teams[0].id);
     host.send({t:'team',id:teams[2].id});
     await host.receive(d=>d.t==='room'&&d.phase==='draft'&&d.myTeam===teams[2].id);
     host.send({t:'pick',pick:teams[2].players[0].id,support:teams[2].players[1].id});
@@ -83,7 +89,7 @@ test('solo player can choose two teammates and enter a CPU match', {timeout:1500
     const snap=await host.receive(d=>d.t==='game'&&d.game?.players.length===4);
     assert.equal(snap.game.controllers.length,1);
     assert.equal(snap.game.teams[0],teams[2].id);
-    assert.notEqual(snap.game.teams[1],null);
+    assert.equal(snap.game.teams[1],teams[0].id);
   }finally{host?.close();child.kill('SIGTERM')}
 });
 
