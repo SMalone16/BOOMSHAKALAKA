@@ -13,6 +13,7 @@ const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8',
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname==='/health'){res.writeHead(200,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,rooms:rooms.size}))}
+  if(url.pathname==='/api/roster'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'public, max-age=60'});return res.end(JSON.stringify(teams))}
   let pathname;
   try{pathname=decodeURIComponent(url.pathname)}catch{return res.writeHead(400).end()}
   if(pathname.includes('\0')||pathname.split('/').some(seg=>seg==='..'||seg.startsWith('.')))return res.writeHead(403).end();
