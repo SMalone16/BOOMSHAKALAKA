@@ -14,21 +14,21 @@ label{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px}sel
 #status{font:12px/1.7 monospace;word-break:break-word;color:#bcf29d}
 @media(max-width:760px){.layout{grid-template-columns:1fr}}
 </style></head>
-<body><a href="/">← Back to game</a> <span style="opacity:.55">/</span> <a href="/sprite-lab.html">Original nine-pose sprite lab</a>
+<body><a href="/">← Back to game</a> <span style="opacity:.55">/</span> <a href="/sprite-lab.html">Game sprite preview</a>
 <h1>Eight-direction <span style="color:#baff7d">Animation Lab</span></h1>
-<p>Preview Ash and Leaf's new 7×10 directional atlases. Move the controls to verify running loops, dribbling, and passing in all eight directions. The source PNGs are not modified. The missing West view is mirrored from the painted East view.</p>
+<p>Preview all eight Pallet and Pewter 7×10 directional atlases. Move the controls to verify running loops, dribbling, and passing in all eight directions. The source PNGs are not modified. The missing West view is mirrored from the painted East view.</p>
 <div class="controls">
-<label>Athlete <select id="who"><option value="pallet-0">Ash</option><option value="pallet-3">Leaf</option></select></label>
+<label>Athlete <select id="who"></select></label>
 <label>Facing <select id="direction"></select></label>
-<label>Animation <select id="motion"><option value="idle">Idle (2)</option><option value="run" selected>Run (4)</option><option value="dribble">Dribble (2)</option><option value="pass">Pass (2)</option></select></label>
+<label>Animation <select id="motion"><option value="idle">Idle (2)</option><option value="run" selected>Run (4)</option><option value="dribble">Dribble (2)</option><option value="pass">Pass (2)</option><option value="shoot">Shoot (stand-in)</option><option value="block">Block (stand-in)</option><option value="dunk">Dunk (stand-in)</option><option value="celebrate">Celebrate (stand-in)</option></select></label>
 <button id="replay">Restart animation</button>
 </div>
 <div class="layout">
 <section><h2>Game-scale live preview</h2><canvas id="portrait" width="240" height="320"></canvas>
 <p id="status">Loading sprites…</p>
-<p>Watch for incorrect direction, pose order, repeated frames, jumps in body alignment, stray background pixels, and accidental cutoffs. Pass plays its two frames then holds the release frame.</p>
+<p>Watch for incorrect direction, pose order, repeated frames, jumps in body alignment, stray background pixels, and accidental cutoffs. Pass plays its two frames then holds the release frame. Shoot, block, dunk and celebrate currently reuse available key poses (not additional painted artwork).</p>
 </section>
-<section><h2>Source 70-frame sheet</h2><img id="raw" alt="Full 10-column by 8-row sprite sheet">
+<section><h2>Source 70-frame sheet</h2><img id="raw" alt="Full 7-row × 10-column sprite sheet">
 <h3>Ten frames for selected direction</h3><div id="frames"></div>
 <p style="font-size:12px">Frame order: Idle A / Idle B / Run A / Run B / Run C / Run D / Dribble A / Dribble B / Pass Windup / Pass Release.</p>
 </section></div>
