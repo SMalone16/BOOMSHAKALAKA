@@ -3,6 +3,14 @@ const $=id=>document.getElementById(id);
 const c=$('portrait').getContext('2d');
 const source=$('raw');
 const chooser=$('who'),direction=$('direction'),motion=$('motion');
+for(const [id,file] of Object.entries(SpriteArt.directional)){
+ const option=document.createElement('option');
+ option.value=id;
+ const label=id.replace(/^[^-]+-/, '');
+ option.textContent=file.startsWith('pallet/')?'Pallet · '+label.toUpperCase():'Pewter · '+label.toUpperCase();
+ chooser.append(option);
+}
+
 for(const [i,name] of SpriteArt.directions.entries()){
  const option=document.createElement('option');option.value=String(i);option.textContent=name;direction.append(option);
 }
