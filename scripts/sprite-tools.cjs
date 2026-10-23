@@ -4,9 +4,11 @@
  * npm run sprites:check
  * npm run sprites:slice -- pallet-0
  * npm run sprites:slice -- pallet-3
+ * npm run sprites:slice -- pewter-0
  * npm run sprites:slice -- all
  *
- * Does not alter the original atlas. Output under build/sprite-frames/ is
+ * Reads every registered 7x10 atlas, Pallet and Pewter. Never alters any
+ * source PNG. Output under build/sprite-frames/ is
  * gitignored. Use generated manifest to inspect all 70 individually.
  */
 const fs=require('node:fs/promises');
@@ -86,7 +88,7 @@ async function slice(id){
 }
 async function main(){
   const command=process.argv[2]||'validate',targetId=process.argv[3]||'all';
-  if(!['validate','slice'].includes(command))throw Error('Usage: sprite-tools.cjs validate | slice <pallet-0|pallet-3|all>');
+  if(!['validate','slice'].includes(command))throw Error('Usage: sprite-tools.cjs validate | slice <roster-id|all>');
   const ids=targetId==='all'?Object.keys(atlas.directional):[targetId];
   for(const id of ids)if(command==='slice')await slice(id);else await inspect(id);
 }

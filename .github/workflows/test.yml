@@ -1,7 +1,7 @@
 name: Test BOOMSHAKALAKA
 on:
   push:
-    branches: [feature/multiplayer-arcade, feature/pallet-pewter-sprite-runtime, feature/ash-leaf-eight-direction, fix/seven-row-sprite-atlas, main]
+    branches: [feature/multiplayer-arcade, feature/pallet-pewter-sprite-runtime, feature/ash-leaf-eight-direction, fix/seven-row-sprite-atlas, feature/pallet-pewter-full-70-frame, feature/arcade-menu-overhaul, main]
   pull_request:
 jobs:
   unit-tests:
@@ -15,10 +15,10 @@ jobs:
       - run: npm test
       - run: npm run sprites:check
       - run: npm run sprites:slice -- all
-      - run: node -e "const fs=require('fs'); for(const id of ['pallet-0','pallet-3']){const m=JSON.parse(fs.readFileSync('build/sprite-frames/'+id+'/atlas.json'));if(m.frames.length!==70)process.exit(1)}"
+      - run: node -e "const fs=require('fs'); for(const id of Object.keys(require('./public/sprites').directional)){const m=JSON.parse(fs.readFileSync('build/sprite-frames/'+id+'/atlas.json'));if(m.frames.length!==70)process.exit(1)}"
       - uses: actions/upload-artifact@v4
         with:
-          name: ash-leaf-sliced-frames
+          name: pallet-pewter-560-frames
           path: build/sprite-frames/
           retention-days: 7
       - run: node --check scripts/sprite-tools.cjs
@@ -26,6 +26,7 @@ jobs:
       - run: node --check server/game.js
       - run: node --check server/roster.js
       - run: node --check public/ui.js
+      - run: node --check public/team-brand.js
       - run: node --check public/arena.js
       - run: node --check public/sprites.js
       - run: node --check public/sprite-lab.js

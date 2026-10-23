@@ -1,7 +1,9 @@
 'use strict';
 const $=id=>document.getElementById(id);
-const views=['home','lobby','draft','play'];
+const views=['home','multiplayer','soloSelect','lobby','draft','play'];
 let ws=null,room=null,me=null,token=null,code=null,browse=0,selected=null,support=null,game=null,connected=false,lastEvent=-1,eventCall=null;
+let soloMyIndex=0,soloOppIndex=1,soloConfirmed=false,homeTeams=null;
+window.arcadeAudioEnabled=localStorage.getItem('boom-audio')!=='off';
 const keys={up:false,down:false,left:false,right:false,shoot:false,pass:false,sprint:false,jump:false,switch:false};
 const icons={pallet:'✦',pewter:'◆',cerulean:'≋',vermillion:'ϟ',lavender:'☾',saffron:'✿',cinnabar:'♨'};
 const descriptions={pallet:'All-around versatility, hustle and fearless finishes.',pewter:'Paint protection and dominant rebounding.',cerulean:'Fast breaks and deep-range splashes.',vermillion:'Thunderous dunks and electric steals.',lavender:'Elusive guards and perimeter defense.',saffron:'High-IQ team play and surgical shooting.',cinnabar:'Scorching jumpers and explosive finishes.'};
@@ -29,8 +31,12 @@ function connect(){
     }
     if(data.t==='room'){
       const oldTeam=room?.myTeam,oldPhase=room?.phase;room=data;
+      if(data.solo&&location.search)history.replaceState(null,'',location.pathname);
       if(data.phase==='lobby'){show('lobby');renderLobby()}
       if(data.phase==='draft'){
+        if(data.solo&&(!soloConfirmed||data.myTeam!==data.roster[soloMyIndex].id||data.soloOpponent!==data.roster[soloOppIndex].id)){
+          show('soloSelect');renderSoloSelect();return;
+        }
         if(oldPhase!=='draft'||oldTeam!==data.myTeam){selected=null;support=null;
           const i=data.roster.findIndex(t=>t.id===data.myTeam);if(i>=0)browse=i}
         const self=data.ownPicks.find(p=>p.id===data.me);
@@ -67,7 +73,12 @@ function connect(){
   };
 }
 function bind(id,fn){$(id).addEventListener('click',fn)}
-bind('soloBtn',()=>send({t:'solo'}));
+bind('soloBtn',()=>{soloConfirmed=false;send({t:'solo'})});
+bind('multiplayerBtn',()=>show('multiplayer'));
+bind('backFromMulti',()=>show('home'));
+bind('leaveLobby',()=>location.assign('/'));
+bind('soloExit',()=>location.assign('/'));
+bind('draftBackSolo',()=>{if(room?.solo){soloConfirmed=false;selected=null;support=null;show('soloSelect');renderSoloSelect()}});
 bind('hostBtn',()=>send({t:'create'}));
 bind('joinBtn',()=>{
   const value=$('joinCode').value.trim().toUpperCase();
@@ -76,9 +87,13 @@ bind('joinBtn',()=>{
 });
 bind('setInitials',()=>send({t:'initials',value:$('initials').value.trim()}));
 bind('copyLink',()=>{
-  navigator.clipboard?.writeText($('inviteUrl').value).then(()=>toast('INVITE LINK COPIED!')).catch(()=>{
-    $('inviteUrl').select();toast('Select and copy the highlighted link.');
-  });
+  const field=$('inviteUrl'),fallback=()=>{
+    field.focus();field.select();
+    try{if(document.execCommand('copy'))return toast('INVITE LINK COPIED!')}catch{}
+    toast('Select and copy the highlighted invitation link.');
+  };
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(field.value).then(()=>toast('INVITE LINK COPIED!')).catch(fallback);
+  else fallback();
 });
 const captain=()=>room?.ownPicks[0]?.id===me;
 bind('prevTeam',()=>{if(!room.myTeam||captain()){browse=(browse+room.roster.length-1)%room.roster.length;renderDraft()}});
@@ -135,14 +150,18 @@ function renderDraft(){
   SpriteArt.preloadTeam(team.id);
   const isSoloSide=room.ownPicks.length===1;
   $('teamName').textContent=team.name;$('teamName').style.color=team.primary;
-  $('teamIcon').textContent=icons[team.id]||'★';$('teamIcon').style.color=team.primary;
+  $('teamIcon').innerHTML=TeamBrand.crest(team,108);$('teamIcon').style.color=team.primary;
+  $('draft').style.setProperty('--team-accent',team.primary);
+  $('draftBackSolo').hidden=!room.solo;
   $('teamDesc').textContent=descriptions[team.id]||'Original arena squad';
-  $('draftInfo').textContent=isSoloSide?'CHOOSE YOUR DUO':'CHOOSE YOUR PLAYER';
-  $('lockTeam').style.display=captain()?'':'none';
+  $('draftInfo').textContent=room.solo?'VS '+(room.roster.find(t=>t.id===room.soloOpponent)?.name||'CPU'):
+    isSoloSide?'CHOOSE YOUR DUO':'CHOOSE YOUR PLAYER';
+  $('lockTeam').style.display=room.solo?'none':captain()?'':'none';
+  $('prevTeam').disabled=!!room.solo||!captain();$('nextTeam').disabled=!!room.solo||!captain();
   $('lockTeam').textContent=locked?'✓ TEAM SELECTED':'CHOOSE '+team.name;
   $('lockTeam').disabled=!!mine?.ready;
   const allowed=!!room.myTeam&&locked&&!mine?.ready;
-  $('teamHelp').textContent=allowed?'Pick '+(isSoloSide?'your player and AI teammate.':'the athlete you will control.'):'Team captain selects a team first.';
+  $('teamHelp').textContent=allowed?'Pick '+(isSoloSide?'your athlete and CPU partner.':'the athlete you will control.'):'Team captain selects a team first.';
   const partner=room.ownPicks.filter(p=>p.id!==me);
   $('pickSummary').innerHTML='YOU: '+escapeHTML(team.players.find(p=>p.id===selected)?.name||'NOT PICKED')+
     (isSoloSide?'<br>CPU PARTNER: '+escapeHTML(team.players.find(p=>p.id===support)?.name||'NOT PICKED'):'')+
@@ -151,17 +170,17 @@ function renderDraft(){
   $('rosterCards').innerHTML=team.players.map(p=>{
     const taken=partner.some(m=>m.pick===p.id),own=selected===p.id,second=support===p.id;
     return '<button class="charCard '+(own?'selected':second?'support':'')+'" data-pick="'+p.id+'" '+(!allowed||taken?'disabled':'')+'>'+
-      '<canvas width="64" height="82" data-portrait="'+p.id+'"></canvas>'+
+      '<canvas width="112" height="134" data-portrait="'+p.id+'"></canvas>'+
       '<strong>'+escapeHTML(p.name)+'</strong><small>'+escapeHTML(p.archetype)+'</small><span class="pickTag">'+
       (own?'★ STARTER':second?'◆ PARTNER':taken?'TEAMMATE PICK':'TAP TO DRAFT')+'</span></button>';
   }).join('');
   for(const portrait of $('rosterCards').querySelectorAll('canvas')){
     const p=team.players.find(p=>p.id===portrait.dataset.portrait),c=portrait.getContext('2d');
     c.imageSmoothingEnabled=false;
-    if(!SpriteArt.draw(c,p,32,77,1,0,'idle',{face:1,direction:3}))drawAvatar(c,p,team,32,73,1.9,0,'idle',false);
+    if(!SpriteArt.draw(c,p,56,128,1.88,0,'idle',{face:1,direction:3}))drawAvatar(c,p,team,56,120,2.2,0,'idle',false);
   }
   $('readyBtn').disabled=!allowed&&!mine?.ready||!selected||(isSoloSide&&!support);
-  $('readyBtn').textContent=mine?.ready?'✓ READY — TAP TO CHANGE':'LOCK LINEUP / READY';
+  $('readyBtn').textContent=mine?.ready?'✓ READY — TAP TO CHANGE':room.solo?'🏀 TIP OFF · PLAY NOW':'CONFIRM PLAYER · READY';
   const focus=team.players.find(p=>p.id===support)||team.players.find(p=>p.id===selected)||team.players[0];
   $('scoutName').textContent=focus.name.toUpperCase();$('scoutType').textContent=focus.archetype;
   drawRadar(focus,team);
@@ -210,8 +229,91 @@ for(const button of $('touchControls').querySelectorAll('[data-key]')){
   for(const ev of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(ev,e=>{e.preventDefault();keyChange(k,false)});
 }
 SpriteArt.onChange(id=>{
-  if(room?.phase==='draft'&&room.roster[browse]?.players.some(p=>p.id===id))renderDraft();
+  if(room?.phase==='draft'&&room.roster[browse]?.players.some(p=>p.id===id)&&$('draft').classList.contains('active'))renderDraft();
+  if(room?.solo&&$('soloSelect').classList.contains('active'))renderSoloSelect();
+  drawHomeAthletes();
 });
+
+function paintAthlete(canvas,player,team,scale=1.9){
+  const c=canvas.getContext('2d');c.clearRect(0,0,canvas.width,canvas.height);
+  c.imageSmoothingEnabled=false;
+  const x=canvas.width/2,y=canvas.height-7;
+  if(!SpriteArt.draw(c,player,x,y,scale,0,'idle',{direction:3,face:1})){
+    if(typeof drawAvatar==='function')drawAvatar(c,player,team,x,y,Math.min(2.4,scale),0,'idle',false);
+  }
+}
+function drawHomeAthletes(){
+  const leaf=$('homeLeaf'),brock=$('homeBrock');
+  if(!leaf||!brock)return;
+  const teams=room?.roster||homeTeams;
+  if(!teams)return;
+  for(const [canvas,team,player] of [[leaf,teams[0],teams[0].players[3]],[brock,teams[1],teams[1].players[0]]]){
+    SpriteArt.preloadTeam(team.id);paintAthlete(canvas,player,team,2.7);
+  }
+}
+function renderMiniRoster(team,id){
+  const holder=$(id);
+  holder.innerHTML=team.players.map(p=>'<div class="miniAthlete"><canvas width="76" height="84" data-athlete="'+p.id+'"></canvas><span>'+escapeHTML(p.name)+'</span></div>').join('');
+  SpriteArt.preloadTeam(team.id);
+  for(const canvas of holder.querySelectorAll('canvas')){
+    const player=team.players.find(p=>p.id===canvas.dataset.athlete);
+    paintAthlete(canvas,player,team,1.13);
+  }
+}
+function renderSoloSelect(){
+  if(!room?.solo)return;
+  const own=room.roster[soloMyIndex],opponent=room.roster[soloOppIndex];
+  $('soloOwnPanel').style.setProperty('--team-accent',own.primary);
+  $('soloOppPanel').style.setProperty('--team-accent',opponent.primary);
+  $('soloMyLogo').innerHTML=TeamBrand.crest(own,120);
+  $('soloOppLogo').innerHTML=TeamBrand.crest(opponent,120);
+  $('soloMyName').textContent=own.name;
+  $('soloOppName').textContent=opponent.name;
+  $('soloMyTag').textContent=TeamBrand.motto(own.id);
+  $('soloOppTag').textContent=TeamBrand.motto(opponent.id);
+  renderMiniRoster(own,'soloMyRoster');
+  renderMiniRoster(opponent,'soloOppRoster');
+}
+for(const [id,which,step] of [
+  ['soloMyPrev','my',-1],['soloMyNext','my',1],
+  ['soloOppPrev','opponent',-1],['soloOppNext','opponent',1]
+]){
+  bind(id,()=>{
+    if(!room?.solo)return;
+    if(which==='my')soloMyIndex=(soloMyIndex+step+room.roster.length)%room.roster.length;
+    else soloOppIndex=(soloOppIndex+step+room.roster.length)%room.roster.length;
+    renderSoloSelect();
+  });
+}
+bind('soloContinue',()=>{
+  if(!room?.solo)return;
+  soloConfirmed=true;
+  send({t:'team',id:room.roster[soloMyIndex].id});
+  send({t:'opponent-team',id:room.roster[soloOppIndex].id});
+  toast('MATCHUP SET — CHOOSE YOUR TWO ATHLETES');
+});
+function showModal(title,body){
+  $('modalTitle').textContent=title;$('modalBody').innerHTML=body;
+  $('modal').classList.remove('hidden');$('closeModal').focus();
+}
+function closeModal(){$('modal').classList.add('hidden')}
+bind('closeModal',closeModal);
+$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('modal').classList.contains('hidden'))closeModal()});
+bind('howBtn',()=>showModal('HOW TO PLAY',
+  '<p>Pick a team, choose two athletes, then outscore your opponent in 2-on-2 arcade basketball.</p>'+
+  '<p><b>WASD</b> — Move · <b>J</b> — Hold and release to shoot · <b>K</b> — Pass / Steal · <b>I</b> — Block · <b>L</b> — Sprint · <b>Q</b> — Switch your solo player.</p>'+
+  '<p>Play solo against CPU athletes or share a multiplayer lobby link with friends. Both teams field two athletes.</p>'));
+bind('optionsBtn',()=>showModal('SETTINGS',
+  '<label class="settingToggle"><input type="checkbox" id="settingSound" '+(window.arcadeAudioEnabled?'checked':'')+'> ENABLE ARCADE SOUND EFFECTS</label>'+
+  '<p>Changes take effect immediately and are saved on this device.</p>'));
+$('modalBody').addEventListener('change',e=>{
+  if(e.target.id==='settingSound'){window.arcadeAudioEnabled=e.target.checked;
+    localStorage.setItem('boom-audio',e.target.checked?'on':'off')}
+});
+
 code=new URLSearchParams(location.search).get('room')?.toUpperCase()||null;
 if(code)$('joinCode').value=code;
+fetch('/api/roster').then(r=>{if(!r.ok)throw Error('Roster not available');return r.json()})
+  .then(roster=>{homeTeams=roster;drawHomeAthletes()}).catch(()=>{});
 connect();

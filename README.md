@@ -57,66 +57,76 @@ Then open http://localhost:3000. GET \`/health\` returns server status.
 ## Safety and limitations
 Educational prototype, **not a production-scale public game service**: rooms have unguessable temporary codes and per-player session tokens, but no accounts, persistent game storage, matchmaking service, moderation, or anti-cheat telemetry. The server accepts only predefined control buttons, limits message size and rate, and controls authoritative scores/movement. Codespaces is suitable for supervised playtesting; do not keep its public port running unattended. If a player leaves mid-game, their athlete falls back to AI until they reconnect.
 
-## New Pallet + Pewter character art (sprite runtime)
-**Eight custom sprite sheets are now integrated.** The game uses the filenames already uploaded in \`public/assets/sprites/pallet/\` and \`public/assets/sprites/pewter/\`. No renaming is needed.
+## Pallet and Pewter custom character animations
 
-- Pallet: \`Pallet - Ash.png\`, \`Pallet - Gary.png\`, \`Pallet - Professor.png\`, \`Pallet - Leaf.png\`
-- Pewter: \`Pewter - Brock.png\`, \`Pewter - Flint.png\`, \`Pewter - Opal.png\`, \`Pewter - Boulder.png\`
-- Each PNG is 1086 × 1448 RGBA. \`public/sprites.js\` extracts a **3×3 grid** and displays each cell at a logical 48 × 64 pixel resolution with nearest-neighbor scaling.
-- Frame order: **idle**, **running A**, **running B**, **dribble**, **pass**, **shoot**, **block/jump**, **dunk**, **celebrate**. Running alternates the two available poses; the others are key poses, not yet full multipose animation sequences.
-- Server snapshots contain a persistent \`profileId\`, so sprite selection always follows the athlete you picked even if their in-game court slot changes.
-- The **team draft portraits** and **live match characters** both use these sprite sheets. If an asset is missing, slow to load, or the opponent belongs to an unfinished team, the original procedural character artwork remains in place.
-- The basketball, scoreboard, shot meter, and player selection ring are still rendered by the existing game code.
+The game now automatically loads **all eight custom 7-row × 10-column (70-frame) sprite atlases**, each from a clean PNG filename:
 
-### Preview and troubleshoot
-While the Codespace is running, open **\`/sprite-lab.html\`** on the same forwarded game URL. Pick a character to see the original sheet and the exact nine cropped frames the game uses. Adjust the temporary inset, margin, or gap controls to test cropping. These changes affect only the diagnostic preview; once the values look correct they can be configured in \`public/sprites.js\`.
+| Team | Athletes and asset paths |
+| --- | --- |
+| Pallet Paladins | `public/assets/sprites/pallet/ash.png`, `gary.png`, `professor.png`, `leaf.png` |
+| Pewter Power | `public/assets/sprites/pewter/brock.png`, `flint.png`, `opal.png`, `boulder.png` |
 
-The source PNG having an RGBA channel **does not prove its background is transparent**. Sprite Lab reports an approximate transparent-pixel percentage; if it says 0% fully transparent and you see a visible background in every frame, remove the original backgrounds and replace those PNGs in GitHub.
+The originals were moved *without re-encoding or altering image contents*; the old doubled-`.png.png` paths are gone from this branch.
 
-### Adding the remaining five teams
-Add four equally organized PNGs to each team's folder. Then append the corresponding character roster IDs and exact filenames to the \`characters\` map in \`public/sprites.js\`. This does not require changes to multiplayer or the basketball physics.
+### Sprite grid and animation behavior
 
-## Ash and Leaf directional sprite layout — 7 rows × 10 columns
+The browser slices each PNG as **7 rows × 10 columns** (70 frames). Fractional image dimensions are handled through rounded pixel crop boundaries; the Sharp tool uses the same rectangles. Row order:
 
-The uploaded advanced atlases are **70 frames each**, not 80. This fixes the previous
-slicing bug where fragments of other poses appeared in-game.
+- Row 0: N (back)
+- Row 1: NE (back-right)
+- Row 2: E (right)
+- Row 3: SE (front-right)
+- Row 4: S (front)
+- Row 5: SW (front-left)
+- Row 6: NW (back-left)
 
-- Original files (unchanged): `public/assets/sprites/pallet/ash.png.png` and `public/assets/sprites/pallet/leaf.png.png`.
-- Image resolution: **1402 × 1122 RGBA PNG**. Ten columns across, seven rows down.
-- **Painted row order:** N, NE, E, SE, S, SW, NW.
-- **Eight game directions:** N=0, NE=1, E=2, SE=3, S=4, SW=5, **W=mirrored E**, NW=6. The game still has all eight movements; W is mirrored because it has no unique painted row.
-- **Column order:** idle A/B, run A/B/C/D, dribble A/B, pass windup/release.
-- Animated idle, run, dribble and pass use the advanced atlas. Jump, shoot, block, dunk and celebrate use the original nine-pose sheets for now. All other characters retain their existing assets.
-- Canvas and the Sharp slicing tool round every cell boundary the same way, so there is no fractional-pixel drift.
+The game controls all **eight movement directions**. The missing W view mirrors the painted E view.
 
-### Preview in Codespaces
+Columns 0–9: **Idle A, Idle B, Run A, Run B, Run C, Run D, Dribble A, Dribble B, Pass Windup, Pass Release**.
 
-Start the game with `npm start`, then open `/directional-lab.html` at the forwarded game URL.
-Select Ash or Leaf, cycle through all eight directions, and inspect the ten frame previews.
-Selecting **W** displays a horizontally mirrored E row. Run an actual game afterward to confirm correct feet placement, pose order and animation timing.
+Characters use the proper four-frame run cycles, two-frame idle and dribble cycles, and two-frame directional pass action. Facing data comes from the authoritative multiplayer server. Rendering clocks interpolate animation locally between network updates, and passing stays pointed at the teammate.
 
-### Optional Sharp validation/slicer (development only)
+**Important art limitation:** the 70-frame atlases do **not** include dedicated shooting, jumping, blocking, dunking, or celebration art. Rather than switching back to low-detail procedural characters (or loading the removed nine-pose files), these states reuse available 70-frame key poses as temporary **direction-aware stand-ins**. Shooting and dunking turn toward the hoop. Dedicated hand-drawn frames for these actions can be added as a future art upgrade; they are not falsely represented as part of the existing 70.
 
-The Sharp package is a **development dependency**, not a runtime/browser dependency.
-After `npm install`:
+Other teams continue with the original procedurally drawn character renderer until their atlases are added.
+
+### Preview all eight athletes
+
+Run `npm start` and open **`/directional-lab.html`** on your game URL. Select any Pallet or Pewter athlete, all eight facing directions, and idle/run/dribble/pass. The preview also exposes the temporary action stand-ins. It shows the original full source and ten extracted frames for the selected facing direction. Your original sheets are never modified.
+
+### Sharp sprite tooling (optional, dev-only)
 
 ```bash
+npm install
 npm run sprites:check
-npm run sprites:slice -- pallet-0   # Ash: export 70 individual PNGs
-npm run sprites:slice -- pallet-3   # Leaf: export 70 individual PNGs
-npm run sprites:slice -- all        # Both
+npm run sprites:slice -- all
+# or for one athlete:
+npm run sprites:slice -- pewter-0
 ```
 
-The slicer saves frame PNGs plus an `atlas.json` manifest to
-`build/sprite-frames/<character-id>/`. This directory is ignored by Git.
-It **does not replace, resize, or modify** the uploaded source sprite sheets.
+`sprites:check` inspects all **eight** registered atlases for readable PNGs, alpha transparency, missing frames, and pixels reaching cell edges. A touched edge produces a warning rather than deleting artwork; those frames may need manual visual cleanup.
 
-Validation checks format, alpha transparency, 70 nonempty cells and artwork touching
-tile boundaries. The initial artwork has some painted pixels at cell boundaries,
-so warnings are expected and are **not automatically erased**. If visible body parts
-are clipped in the corrected preview, we will need to adjust those frames or repack
-the source art; a grid correction alone cannot repair overlapping illustrations.
+`sprites:slice` exports each individual frame and `atlas.json` under the Git-ignored `build/sprite-frames/<roster-id>/`. It extracts **560 PNGs total** for these eight athletes. GitHub Actions uploads the generated frames as a temporary inspection artifact; **Sharp is not required in the deployed browser**.
 
-To expand to more athletes, add another 7×10 PNG and its roster ID/filename to the
-`directional` map in `public/sprites.js`. You do not need to write 70
-animations or build a full Aseprite pipeline for each new character.
+### Extending the roster
+
+Place future 7×10 atlases in `public/assets/sprites/<team>/`, then add their exact filename and roster ID to the `directional` map in `public/sprites.js`. This automatically enables character selection previews and animation in solo, 2-, 3-, and 4-player games without changing the multiplayer server or writing separate movement logic.
+
+
+## Arcade menu redesign
+
+The responsive front end has a new illustrated arena title screen, original SVG crests for all seven teams, real roster-sprite previews for Pallet/Pewter, and a clearer player choice path. Artwork is layered HTML/CSS/SVG rather than a flattened screenshot, so menu actions stay clickable and accessible.
+
+**Single player:** Title → Single Player → pick *your* team and *CPU opponent* independently → select your two athletes (you plus CPU partner) → Tip Off. Solo games no longer require initials or show the multiplayer lobby/code. CPU team choice is applied server-side before the match starts for animation playtesting.
+
+**Multiplayer:** Title → Multiplayer → Host or Join. Host gets one invite URL using the Codespace's actual public address and ?room=CODE, with a Copy Invite Link button. Joining by link enters automatically; typing the eight-digit code remains a fallback. Players set initials, host chooses random or assigned teams, then everyone follows the existing private team/player draft and match flow. The lobby has Exit.
+
+**Teams/players:** Rosters and hexagonal stat chart use authoritative server/roster.js data. SVG badges and taglines are in public/team-brand.js and can be extended without touching basketball physics. Pallet/Pewter cards use actual 7×10 sprite atlases; unfinished teams retain procedural portraits.
+
+**Art assets:** public/assets/ui/arena.svg is a new original vector stadium backdrop matching the neon-pixel-arcade visual language of the concept art. The earlier generated mockups are design references, *not* noninteractive backgrounds.
+
+**Settings/help:** How to Play describes current controls. Sound Settings toggles actual game sound effects, saved locally.
+
+**Test:** In Codespaces, choose the feature/arcade-menu-overhaul branch and run npm install then npm start. To share invites, keep Codespaces running and make port 3000 publicly reachable to trusted testers. Browser visual review is still required; automated tests cover HTML bindings, routes, WebSockets, and sprite assets.
+
+This branch includes PR #5's Pallet/Pewter 70-frame work because that PR was open when the UI branch was created. If PR #5 merges first, the remaining UI diff will become smaller automatically.

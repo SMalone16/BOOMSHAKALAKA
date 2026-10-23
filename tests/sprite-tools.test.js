@@ -16,17 +16,20 @@ test('Sharp extraction coordinates match in-game Canvas cropping for every 7x10 
   }
 });
 
-test('Sharp reads both uploaded PNG sources with expected dimensions and transparency',async()=>{
-  for(const id of ['pallet-0','pallet-3']){
+test('Sharp can extract a legal final frame from all eight uploaded atlases',async()=>{
+  for(const id of Object.keys(SpriteArt.directional)){
     const source=sourceFor(id),meta=await sharp(source).metadata();
-    assert.equal(meta.format,'png');
-    assert.equal(meta.width,1402);
-    assert.equal(meta.height,1122);
-    assert.equal(meta.hasAlpha,true);
+    assert.equal(meta.format,'png',id);
+    assert.ok(meta.width>=1000&&meta.height>=800,id);
+    assert.ok(Math.abs(meta.width/meta.height-1.25)<.04,id);
+    assert.equal(meta.hasAlpha,true,id);
     const crop=bounds(meta.width,meta.height,6,9);
     const buffer=await sharp(source).extract(crop).png().toBuffer();
     const cropped=await sharp(buffer).metadata();
     assert.equal(cropped.width,crop.width);
     assert.equal(cropped.height,crop.height);
+    const frame=SpriteArt.advancedRect(meta.width,meta.height,7,9);
+    assert.equal(frame.sx,crop.left);
+    assert.equal(frame.sy,crop.top);
   }
 });

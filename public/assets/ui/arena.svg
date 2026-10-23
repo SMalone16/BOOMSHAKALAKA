@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 810" width="1440" height="810">
+<defs>
+  <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#040b22"/><stop offset=".6" stop-color="#14205c"/><stop offset="1" stop-color="#22285c"/></linearGradient>
+  <linearGradient id="wood" x2="0" y2="1"><stop stop-color="#c87942"/><stop offset=".68" stop-color="#fbb86d"/><stop offset="1" stop-color="#a54f39"/></linearGradient>
+  <radialGradient id="halo"><stop stop-color="#38aaff" stop-opacity=".42"/><stop offset="1" stop-color="#38aaff" stop-opacity="0"/></radialGradient>
+  <pattern id="crowd" width="28" height="28" patternUnits="userSpaceOnUse"><rect width="28" height="28" fill="#121c42"/><path d="M4 4h6v7H4zM16 11h7v6h-7zM9 20h7v4H9z" fill="#536091"/><path d="M18 4h4v4h-4zM1 20h5v3H1z" fill="#cb559c"/></pattern>
+  <pattern id="floor" width="70" height="70" patternUnits="userSpaceOnUse"><path d="M0 0H70M0 0V70" stroke="#f5cb86" stroke-width="2" opacity=".45"/><path d="M35 0V70" stroke="#96452d" opacity=".18"/></pattern>
+  <pattern id="pixels" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="3" height="3" fill="#fff" opacity=".06"/></pattern>
+</defs>
+<rect width="1440" height="810" fill="url(#sky)"/>
+<circle cx="225" cy="240" r="340" fill="url(#halo)"/><circle cx="1200" cy="240" r="340" fill="url(#halo)"/>
+<!-- Stadium trusses and roof -->
+<g fill="none" stroke="#304f86" stroke-width="13" opacity=".75"><path d="M0 72H1440M0 142H1440M0 0L700 170 1440 0M-90 0L680 160 1550 0M200 0L720 160 1240 0"/></g>
+<g fill="#edfaff"><path d="M30 116h125v30H30zM1285 116h125v30h-125z"/><path d="M270 62h120v26H270zM1050 62h120v26h-120z"/></g>
+<g fill="#6bd8ff"><path d="M35 119h115v23H35zM1290 119h115v23h-115zM276 65h108v20H276zM1056 65h108v20h-108z"/></g>
+<g stroke="#e4c9fe" stroke-width="3" opacity=".8"><path d="M85 150 0 560M1360 150 1440 560 M320 90 150 540 M1120 90 1290 540"/></g>
+<path d="M0 220 Q720 70 1440 220V580H0Z" fill="url(#crowd)"/>
+<path d="M0 240 Q720 120 1440 240" stroke="#fc509a" stroke-width="16" fill="none"/>
+<path d="M0 322 Q720 175 1440 322" stroke="#55c9ff" stroke-width="22" fill="none"/>
+<path d="M0 402 Q720 272 1440 402" stroke="#f4b64d" stroke-width="11" fill="none"/>
+<rect x="0" y="450" width="1440" height="10" fill="#0c1338"/><rect x="0" y="457" width="1440" height="5" fill="#56b8eb"/>
+<!-- court -->
+<path d="M0 560 1440 560 1440 810H0Z" fill="url(#wood)"/>
+<path d="M0 560 1440 560 1440 810H0Z" fill="url(#floor)"/>
+<path d="M-50 640 Q720 515 1490 640" stroke="#ffe8b3" stroke-width="9" fill="none"/>
+<path d="M-50 710 Q720 582 1490 710" stroke="#ffe8b3" stroke-width="7" fill="none"/>
+<ellipse cx="720" cy="697" rx="225" ry="77" fill="none" stroke="#fff3c9" stroke-width="9"/>
+<ellipse cx="720" cy="697" rx="74" ry="25" fill="none" stroke="#fff3c9" stroke-width="5"/>
+<path d="M720 560V810" stroke="#ffeaca" stroke-width="5"/>
+<path d="M0 744Q720 610 1440 744" stroke="#ffedbd" stroke-width="5" fill="none" opacity=".75"/>
+<path d="M-50 600Q720 480 1490 600" stroke="#ef9e60" stroke-width="16" fill="none" opacity=".8"/>
+<g opacity=".6"><rect x="40" y="500" width="46" height="12" fill="#8ae8fe"/><rect x="1300" y="500" width="70" height="12" fill="#ffb54a"/></g>
+<g opacity=".8">
+  <path d="M685 380V505" stroke="#6a8ab5" stroke-width="8"/><rect x="634" y="378" width="102" height="67" stroke="#bed3ed" stroke-width="7" fill="#293a63"/>
+  <rect x="661" y="401" width="50" height="36" fill="#e1f2ff"/><path d="M658 437H714" stroke="#ff8c31" stroke-width="8"/><path d="M665 444 670 466 703 466 709 444" fill="none" stroke="#eef4f5" stroke-width="4"/>
+</g>
+<rect width="1440" height="810" fill="url(#pixels)"/>
+<path d="M0 790 1440 790" stroke="#091530" stroke-width="34"/>
+</svg>

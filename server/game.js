@@ -83,6 +83,9 @@ function passBall(g,p){
 function takeShot(g,p,power){
   if(!p.hasBall||p.cooldown>0)return;
   const gx=goal(p.side),range=Math.hypot((gx-p.x),(RIM_Y-p.y)*1.25);
+  // Shooting sprites should aim toward the basket, not an old run direction.
+  p.facing8=directionFromVector(gx-p.x,RIM_Y-p.y,p.facing8);
+  p.face=gx<p.x?-1:1;
   const three=range>239,pressure=g.players.filter(q=>q.side!==p.side)
       .reduce((v,q)=>v+(dist(q,p)<68?(68-dist(q,p))/68*.2:0),0);
   const stat=three?p.stats.three:(p.stats.three*.43+p.stats.dunk*.57);
@@ -99,6 +102,8 @@ function takeShot(g,p,power){
 }
 function startDunk(g,p){
   if(!p.hasBall||p.cooldown>0)return;
+  p.facing8=directionFromVector(goal(p.side)-p.x,RIM_Y-p.y,p.facing8);
+  p.face=goal(p.side)<p.x?-1:1;
   p.dunkTime=.7;p.charging=0;p.cooldown=1;p.action='dunk';p.actionT=.7;
   g.ball={mode:'dunk',owner:p.id,shooter:p.id,side:p.side,x:p.x,y:p.y,z:25,time:0,duration:.7,blocked:false};
   emit(g,'TAKING FLIGHT!','shot');
@@ -169,7 +174,7 @@ function updatePlayers(room,g,dt){
     const ax=dx/len*accel*boost,ay=dy/len*accel*boost;
     p.vx+=(ax-p.vx)*Math.min(1,dt*10);p.vy+=(ay-p.vy)*Math.min(1,dt*10);
     // Lock pass direction while the throwing animation completes.
-    if((dx||dy)&&!(p.action==='pass'&&p.actionT>0)){
+    if((dx||dy)&&!(['pass','shoot','dunk'].includes(p.action)&&p.actionT>0)){
       p.facing8=directionFromVector(dx,dy,p.facing8);
       if(dx)p.face=dx>0?1:-1;
     }

@@ -6,16 +6,16 @@ const art=require('../public/sprites');
 const {teams}=require('../server/roster');
 const {createGame,passBall,tick,publicGame,directionFromVector}=require('../server/game');
 
-test('both new 70-frame assets are mapped by exact double-extension filenames',()=>{
-  assert.deepEqual(Object.keys(art.directional).sort(),['pallet-0','pallet-3']);
-  assert.equal(art.advancedPath('pallet-0'),'/assets/sprites/pallet/ash.png.png');
-  assert.equal(art.advancedPath('pallet-3'),'/assets/sprites/pallet/leaf.png.png');
-  for(const id of ['pallet-0','pallet-3']){
+test('all eight 70-frame atlases are mapped by normalized filenames',()=>{
+  assert.deepEqual(Object.keys(art.directional).sort(),['pallet-0','pallet-1','pallet-2','pallet-3','pewter-0','pewter-1','pewter-2','pewter-3']);
+  assert.equal(art.advancedPath('pallet-0'),'/assets/sprites/pallet/ash.png');
+  assert.equal(art.advancedPath('pallet-3'),'/assets/sprites/pallet/leaf.png');
+  for(const id of Object.keys(art.directional)){
     const name=art.directional[id];
     const file=fs.readFileSync(path.resolve(__dirname,'../public/assets/sprites',name));
     assert.equal(file.toString('hex',0,8),'89504e470d0a1a0a');
     const w=file.readUInt32BE(16),h=file.readUInt32BE(20);
-    assert.ok(w>=1000&&h>=800,'asset seems too small to hold an 80-cell atlas');
+    assert.ok(w>=1000&&h>=800,'asset seems too small to hold a 70-cell atlas');
     assert.equal(file[25],6,'required RGBA for transparent backgrounds');
     for(let row=0;row<7;row++)for(let col=0;col<10;col++){
       const r=art.advancedRect(w,h,row,col);
@@ -66,15 +66,24 @@ test('advanced renderer chooses source row, preserves sizing and mirrors only mi
     assert.ok(Math.abs(cmd[8]/cmd[9]-expected.sw/expected.sh)<.001,'avoid distorting square atlas cells');
   }finally{global.Image=old}
 });
-test('new art preserves old nine-frame fallback for shooting and dunking',()=>{
+test('special basketball actions keep the original character using 70-frame directional proxy poses',()=>{
   const old=global.Image;const calls=[];
-  class ImageMock{naturalWidth=1086;naturalHeight=1448;set src(v){this.path=v;this.onload?.()}}
+  class ImageMock{naturalWidth=1402;naturalHeight=1122;set src(v){this.path=v;this.onload?.()}}
   const c={save(){},restore(){},translate(){},scale(){},drawImage(...args){calls.push(args)}};
   global.Image=ImageMock;
   try{
-    assert.equal(art.draw(c,{profileId:'pallet-3',face:1},10,40,1,0,'shoot'),true);
-    assert.equal(calls[0][0].path,'/assets/sprites/pallet/Pallet%20-%20Leaf.png');
-    assert.equal(calls[0][1],art.sourceRect(1086,1448,5).sx);
+    for(const [animation,first,last] of [
+      ['shoot',8,9],['block',0,9],['jump',0,9],['dunk',2,9],['celebrate',0,1]
+    ]){
+      calls.length=0;
+      const p={profileId:'pallet-3',face:1,facing8:3};
+      assert.equal(art.draw(c,p,10,40,1,0,animation,{direction:3,animTime:0}),true,animation);
+      assert.equal(calls[0][0].path,'/assets/sprites/pallet/leaf.png');
+      assert.equal(calls[0][1],art.advancedRect(1402,1122,3,first).sx);
+      calls.length=0;
+      assert.equal(art.draw(c,p,10,40,1,0,animation,{direction:3,animTime:.45}),true);
+      assert.equal(calls[0][1],art.advancedRect(1402,1122,3,last).sx);
+    }
   }finally{global.Image=old}
 });
 test('server chooses pass direction toward receiver and locks it through windup',()=>{
