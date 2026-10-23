@@ -31,6 +31,7 @@ function connect(){
     }
     if(data.t==='room'){
       const oldTeam=room?.myTeam,oldPhase=room?.phase;room=data;
+      if(data.solo&&location.search)history.replaceState(null,'',location.pathname);
       if(data.phase==='lobby'){show('lobby');renderLobby()}
       if(data.phase==='draft'){
         if(data.solo&&(!soloConfirmed||data.myTeam!==data.roster[soloMyIndex].id||data.soloOpponent!==data.roster[soloOppIndex].id)){
@@ -75,6 +76,7 @@ function bind(id,fn){$(id).addEventListener('click',fn)}
 bind('soloBtn',()=>{soloConfirmed=false;send({t:'solo'})});
 bind('multiplayerBtn',()=>show('multiplayer'));
 bind('backFromMulti',()=>show('home'));
+bind('leaveLobby',()=>location.assign('/'));
 bind('soloExit',()=>location.assign('/'));
 bind('draftBackSolo',()=>{if(room?.solo){soloConfirmed=false;selected=null;support=null;show('soloSelect');renderSoloSelect()}});
 bind('hostBtn',()=>send({t:'create'}));
