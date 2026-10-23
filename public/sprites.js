@@ -15,16 +15,10 @@
  * Optional legacy 3x3 sheets remain supported if later re-added.
  */
 const SpriteArt=(()=>{
-  const characters=Object.freeze({
-    'pallet-0':'pallet/Pallet - Ash.png',
-    'pallet-1':'pallet/Pallet - Gary.png',
-    'pallet-2':'pallet/Pallet - Professor.png',
-    'pallet-3':'pallet/Pallet - Leaf.png',
-    'pewter-0':'pewter/Pewter - Brock.png',
-    'pewter-1':'pewter/Pewter - Flint.png',
-    'pewter-2':'pewter/Pewter - Opal.png',
-    'pewter-3':'pewter/Pewter - Boulder.png'
-  });
+  // The old nine-pose PNG files are no longer present on main. Do not try
+  // to preload missing URLs; the 7x10 art now handles every action instead.
+  // If individual nine-pose sheets return later, they can be registered here.
+  const characters=Object.freeze({});
   // All eight 7x10 atlases use their normalized .png filenames.
   const directional=Object.freeze({
     'pallet-0':'pallet/ash.png',
